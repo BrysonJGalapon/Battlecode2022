@@ -11,7 +11,7 @@ public enum RotationPreference {
         switch (this) {
             case LEFT: return RIGHT;
             case RIGHT: return LEFT;
-            default: throw new RuntimeException("Shouldn't be here");
+            default: throw new RuntimeException("Should not be here");
         }
     }
 }
