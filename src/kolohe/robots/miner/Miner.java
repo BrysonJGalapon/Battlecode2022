@@ -8,6 +8,11 @@ import kolohe.utils.Utils;
 
 import static kolohe.utils.Utils.RNG;
 
+/*
+    - can collect lead AND gold
+    - collects resources, instantly usable (no need to path backwards to "deposit" collected resources)
+    - bytecode limit: 7,500
+ */
 public class Miner {
     public static void run(RobotController rc) throws GameActionException {
         // Try to mine on squares around us.

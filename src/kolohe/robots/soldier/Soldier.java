@@ -5,6 +5,10 @@ import kolohe.utils.Utils;
 
 import static kolohe.utils.Utils.RNG;
 
+/*
+    - relatively large attack radius
+    - bytecode limit: 10,000
+ */
 public class Soldier {
     public static void run(RobotController rc) throws GameActionException {
         // Try to attack someone
