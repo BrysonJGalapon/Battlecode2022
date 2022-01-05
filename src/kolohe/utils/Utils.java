@@ -21,8 +21,12 @@ public class Utils {
             Direction.NORTHWEST,
     };
 
-    public static <T> T randomValueFrom(T[] arr) {
+    public static <T> T getRandomValueFrom(T[] arr) {
         int pick = RNG.nextInt(arr.length);
         return arr[pick];
+    }
+
+    public static Direction getRandomDirection() {
+        return getRandomValueFrom(ALL_MOVEMENT_DIRECTIONS);
     }
 }

@@ -11,34 +11,30 @@ import java.util.Optional;
 import static kolohe.utils.Utils.MAX_RUBBLE;
 
 public class Bug extends WallFollower implements PathFinder {
-    private final MapLocation initialMapLocation;
     private final RotationPreference rotationPreference;
     private final boolean verbose;
 
     private MapLocation closestMapLocation;
     private RotationPreference currRotationPreference;
 
-    private Bug(MapLocation initialMapLocation, RotationPreference rotationPreference, boolean verbose) {
-        this.initialMapLocation = initialMapLocation;
+    private Bug(RotationPreference rotationPreference, boolean verbose) {
         this.rotationPreference = rotationPreference;
         this.verbose = verbose;
 
-        this.closestMapLocation = initialMapLocation;
-        this.currRotationPreference = (this.rotationPreference == RotationPreference.RANDOM) ? Utils.randomValueFrom(RotationPreference.CONCRETE_ROTATION_PREFERENCES) : this.rotationPreference;
+        this.closestMapLocation = null;
+        this.currRotationPreference = (this.rotationPreference == RotationPreference.RANDOM) ? Utils.getRandomValueFrom(RotationPreference.CONCRETE_ROTATION_PREFERENCES) : this.rotationPreference;
     }
 
-    public static Builder builder(MapLocation initialMapLocation) {
-        return new Builder(initialMapLocation);
+    public static Builder builder() {
+        return new Builder();
     }
 
     public static class Builder {
-        private final MapLocation initialMapLocation;
-
         private boolean verbose = true;
         private RotationPreference rotationPreference = RotationPreference.RANDOM;
 
-        private Builder(MapLocation initialMapLocation) {
-            this.initialMapLocation = initialMapLocation;
+        private Builder() {
+
         }
 
         public Builder verbose(boolean verbose) {
@@ -52,7 +48,7 @@ public class Bug extends WallFollower implements PathFinder {
         }
 
         public Bug build() {
-            return new Bug(this.initialMapLocation, this.rotationPreference, this.verbose);
+            return new Bug(this.rotationPreference, this.verbose);
         }
     }
 
@@ -62,7 +58,8 @@ public class Bug extends WallFollower implements PathFinder {
         for (Direction d: Direction.values()) {
             MapLocation newMapLocation = src.add(d);
 
-            if (rc.senseRubble(newMapLocation) == MAX_RUBBLE) {
+            // TODO address robots as a 'wall'
+            if (isWall(newMapLocation, rc)) {
                 continue;
             }
 
@@ -78,6 +75,10 @@ public class Bug extends WallFollower implements PathFinder {
 
     @Override
     public Optional<Direction> findPath(MapLocation src, MapLocation dst, RobotController rc) throws GameActionException {
+        if (this.closestMapLocation == null) {
+            this.closestMapLocation = src;
+        }
+
         if (src.equals(dst)) {
             return Optional.empty();
         }

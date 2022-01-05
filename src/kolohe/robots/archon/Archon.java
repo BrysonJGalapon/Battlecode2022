@@ -1,12 +1,12 @@
 package kolohe.robots.archon;
 
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.RobotController;
-import battlecode.common.RobotType;
+import battlecode.common.*;
 import kolohe.state.machine.StateMachine;
 import kolohe.state.machine.Stimulus;
 import kolohe.utils.Utils;
+
+import java.util.Map;
+import java.util.Optional;
 
 import static kolohe.utils.Utils.RNG;
 
@@ -48,25 +48,54 @@ import static kolohe.utils.Utils.RNG;
     - can we read enemy communication? YES
  */
 public class Archon {
-    private static final StateMachine<ArchonState> stateMachine = StateMachine.startingAt(ArchonState.START);
+    private static final StateMachine<ArchonState> stateMachine = StateMachine.startingAt(ArchonState.RESOURCE_COLLECTION);
 
-    public static Stimulus collectStimulus() {
-        // TODO
-        return new Stimulus();
+    private static Stimulus collectStimulus(RobotController rc) {
+        Stimulus s = new Stimulus();
+        s.nearbyRobotsInfo = rc.senseNearbyRobots();
+        return s;
     }
 
     public static void run(RobotController rc) throws GameActionException {
-        Stimulus stimulus = collectStimulus();
-        stateMachine.transition(stimulus);
+        Stimulus stimulus = collectStimulus(rc);
+        stateMachine.transition(stimulus, rc);
 
         switch (stateMachine.getCurrState()) {
-            case START: runStartActions(rc); break;
-            case END:   runEndActions(rc); break;
+            case RESOURCE_COLLECTION:   runResourceCollectionActions(rc, stimulus); break;
+            case DEFEND:                runDefendActions(rc, stimulus); break;
+            case ATTACK:                runAttackActions(rc, stimulus); break;
+            case SURVIVE:               runSurviveActions(rc, stimulus); break;
             default: throw new RuntimeException("Should not be here");
         }
     }
 
-    public static void runStartActions(RobotController rc) throws GameActionException {
+    public static void runResourceCollectionActions(RobotController rc, Stimulus stimulus) throws GameActionException {
+        buildMiner(rc);
+    }
+
+    public static void runDefendActions(RobotController rc, Stimulus stimulus) throws GameActionException {
+
+    }
+
+    public static void runAttackActions(RobotController rc, Stimulus stimulus) throws GameActionException {
+
+    }
+
+    public static void runSurviveActions(RobotController rc, Stimulus stimulus) throws GameActionException {
+
+    }
+
+    private static Optional<Direction> buildMiner(RobotController rc) throws GameActionException {
+        Direction direction = Utils.getRandomDirection();
+        if (!rc.canBuildRobot(RobotType.MINER, direction)) {
+            return Optional.empty();
+        }
+
+        rc.buildRobot(RobotType.MINER, direction);
+        return Optional.of(direction);
+    }
+
+    public static void sample(RobotController rc, Stimulus stimulus) throws GameActionException {
         // Pick a direction to build in.
         Direction dir = Utils.ALL_MOVEMENT_DIRECTIONS[RNG.nextInt(Utils.ALL_MOVEMENT_DIRECTIONS.length)];
         if (RNG.nextBoolean()) {
@@ -82,9 +111,5 @@ public class Archon {
                 rc.buildRobot(RobotType.SOLDIER, dir);
             }
         }
-    }
-
-    public static void runEndActions(RobotController rc) throws GameActionException {
-        // Nothing
     }
 }

@@ -1,5 +1,8 @@
 package kolohe.state.machine;
 
+import battlecode.common.GameActionException;
+import battlecode.common.RobotController;
+
 public class StateMachine<T extends State> {
     private T currState;
 
@@ -15,11 +18,11 @@ public class StateMachine<T extends State> {
         return this.currState;
     }
 
-    public void transition(Stimulus stimulus) {
+    public void transition(Stimulus stimulus, RobotController rc) throws GameActionException {
         if (this.currState == null) {
             return;
         }
 
-        this.currState = (T) this.currState.react(stimulus);
+        this.currState = (T) this.currState.react(stimulus, rc);
     }
 }

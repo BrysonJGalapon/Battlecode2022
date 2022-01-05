@@ -15,7 +15,6 @@ import java.util.Optional;
 import static kolohe.utils.Parameters.DEFAULT_TANGENT_BUG_MAX_BACKTRACK_COUNT;
 
 public class TangentBug implements PathFinder {
-    private final MapLocation initialMapLocation;
     private final int sightRadius;
     private final boolean verbose;
 
@@ -26,8 +25,7 @@ public class TangentBug implements PathFinder {
     private MapLocation bugDst;
     private Bug chosenBug;
 
-    private TangentBug(MapLocation initialMapLocation, int sightRadius, boolean verbose, Deque<MapLocation> visitedMapLocations, int maxBacktrackCount) {
-        this.initialMapLocation = initialMapLocation;
+    private TangentBug(int sightRadius, boolean verbose, Deque<MapLocation> visitedMapLocations, int maxBacktrackCount) {
         this.sightRadius = sightRadius;
         this.verbose = verbose;
         this.visitedMapLocations = visitedMapLocations;
@@ -38,19 +36,17 @@ public class TangentBug implements PathFinder {
         this.chosenBug = null;
     }
 
-    public static Builder builder(MapLocation initialMapLocation, int sightRadius) {
-        return new Builder(initialMapLocation, sightRadius);
+    public static Builder builder(int sightRadius) {
+        return new Builder(sightRadius);
     }
 
     public static class Builder {
-        private final MapLocation initialMapLocation;
         private final int sightRadius;
         private boolean verbose = true;
         private Deque<MapLocation> visitedMapLocations = new LinkedList<>();
         private int maxBacktrackCount = DEFAULT_TANGENT_BUG_MAX_BACKTRACK_COUNT;
 
-        private Builder(MapLocation initialMapLocation, int sightRadius) {
-            this.initialMapLocation = initialMapLocation;
+        private Builder(int sightRadius) {
             this.sightRadius = sightRadius;
         }
 
@@ -70,7 +66,7 @@ public class TangentBug implements PathFinder {
         }
 
         public TangentBug build() {
-            return new TangentBug(this.initialMapLocation, this.sightRadius, this.verbose, this.visitedMapLocations, this.maxBacktrackCount);
+            return new TangentBug(this.sightRadius, this.verbose, this.visitedMapLocations, this.maxBacktrackCount);
         }
     }
 
@@ -105,12 +101,13 @@ public class TangentBug implements PathFinder {
         recordToVisitedMapLocations(src);
 
         if (bug != null && bugDst != null && !src.equals(bugDst)) {
+            rc.setIndicatorLine(src, bugDst, 0, 0, 100);
             return bug.findPath(src, bugDst, rc);
         }
 
         // simulate two different paths, the left bug path and the right bug path
-        Bug leftBug = Bug.builder(src).verbose(verbose).rotationPreference(RotationPreference.LEFT).build();
-        Bug rightBug = Bug.builder(src).verbose(verbose).rotationPreference(RotationPreference.RIGHT).build();
+        Bug leftBug = Bug.builder().verbose(verbose).rotationPreference(RotationPreference.LEFT).build();
+        Bug rightBug = Bug.builder().verbose(verbose).rotationPreference(RotationPreference.RIGHT).build();
 
         Tuple<Optional<Direction>, List<MapLocation>> leftBugSimulation = simulate(leftBug, src, dst, rc);
         Tuple<Optional<Direction>, List<MapLocation>> rightBugSimulation = simulate(rightBug, src, dst, rc);
@@ -130,7 +127,7 @@ public class TangentBug implements PathFinder {
         } else if (rightBugDistance < leftBugDistance) {
             bestRotationPreference = RotationPreference.RIGHT;
         } else { // leftBugDistance == rightBugDistance
-            bestRotationPreference = Utils.randomValueFrom(RotationPreference.CONCRETE_ROTATION_PREFERENCES);
+            bestRotationPreference = Utils.getRandomValueFrom(RotationPreference.CONCRETE_ROTATION_PREFERENCES);
         }
 
         List<MapLocation> bestPath;
@@ -158,7 +155,7 @@ public class TangentBug implements PathFinder {
             return Optional.empty();
         }
 
-        bug = Bug.builder(src).verbose(verbose).build();
+        bug = Bug.builder().verbose(verbose).build();
         bugDst = bestFinalLocation;
         chosenBug = bestFinalLocation.equals(leftBugFinalLocation) ? leftBug : rightBug;
 
