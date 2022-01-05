@@ -18,6 +18,7 @@ public strictfp class RobotPlayer {
     public static int MAP_WIDTH;
     public static int MAP_HEIGHT;
     public static RobotType ROBOT_TYPE;
+    public static int BIRTH_YEAR; // the round number this robot was born
 
     /**
      * run() is the method that is called when a robot is instantiated in the Battlecode world.
@@ -34,8 +35,13 @@ public strictfp class RobotPlayer {
         MAP_WIDTH = rc.getMapWidth();
         MAP_HEIGHT = rc.getMapHeight();
         ROBOT_TYPE = rc.getType();
+        BIRTH_YEAR = rc.getRoundNum();
 
         while (true) {
+//            if (rc.getRoundNum() > 4) {
+//                rc.resign();
+//            }
+
             // This code runs during the entire lifespan of the robot, which is why it is in an infinite
             // loop. If we ever leave this loop and return from run(), the robot dies! At the end of the
             // loop, we call Clock.yield(), signifying that we've done everything we want to do.

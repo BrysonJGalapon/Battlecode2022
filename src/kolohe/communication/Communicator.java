@@ -15,5 +15,5 @@ import java.util.List;
  */
 public interface Communicator {
     void sendMessage(RobotController rc, Message message) throws GameActionException;
-    List<Message> receiveMessages(RobotController rc) throws GameActionException;
+    List<Message> receiveMessages(RobotController rc, int limit) throws GameActionException;
 }

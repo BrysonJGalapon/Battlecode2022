@@ -1,9 +1,6 @@
 package kolohe.communication.basic;
 
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
-import battlecode.common.RobotType;
+import battlecode.common.*;
 import kolohe.communication.Communicator;
 import kolohe.communication.Entity;
 import kolohe.communication.Message;
@@ -14,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static kolohe.RobotPlayer.*;
+import static kolohe.utils.Utils.RNG;
 
 /*
     Each index in the shared array represents a message. Keeps a pointer to the next index of
@@ -27,9 +25,9 @@ import static kolohe.RobotPlayer.*;
 public class BasicCommunicator implements Communicator {
     private static final int SHARED_ARRAY_LENGTH = 64;
 
-    private static final int ENTITY_BIT_LENGTH = 3; // supports 2^3 = 8 different entities
-    private static final int MESSAGE_TYPE_BIT_LENGTH = 4; // supports 2^4 = 16 different message types
-    private static final int MAP_LOCATION_BIT_LENGTH = 9; // supports 2^9 = 512 different map locations
+    private static final int ENTITY_BIT_LENGTH = 2; // supports 2^2 = 4 different entities
+    private static final int MESSAGE_TYPE_BIT_LENGTH = 2; // supports 2^2 = 4 different message types
+    private static final int MAP_LOCATION_BIT_LENGTH = 12; // supports 2^12 = 4,096 different map locations
 
     private int idx = 0;
 
@@ -41,11 +39,11 @@ public class BasicCommunicator implements Communicator {
     }
 
     @Override
-    public List<Message> receiveMessages(RobotController rc) throws GameActionException {
+    public List<Message> receiveMessages(RobotController rc, int limit) throws GameActionException {
         List<Message> messages = new LinkedList<>();
 
-        for (int i = 0; i < SHARED_ARRAY_LENGTH; i++) {
-            int encoding = rc.readSharedArray(i);
+        for (int i = 0; i < limit; i++) {
+            int encoding = rc.readSharedArray(RNG.nextInt(SHARED_ARRAY_LENGTH));
             Optional<Message> message = decode(encoding);
             if (message.isPresent() && isRecipientOfMessage(ROBOT_TYPE, message.get())) {
                 messages.add(message.get());
