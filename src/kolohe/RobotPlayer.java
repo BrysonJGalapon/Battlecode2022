@@ -15,6 +15,10 @@ import kolohe.robots.watchtower.Watchtower;
  * is created!
  */
 public strictfp class RobotPlayer {
+    public static int MAP_WIDTH;
+    public static int MAP_HEIGHT;
+    public static RobotType ROBOT_TYPE;
+
     /**
      * run() is the method that is called when a robot is instantiated in the Battlecode world.
      * It is like the main function for your robot. If this method returns, the robot dies!
@@ -27,8 +31,9 @@ public strictfp class RobotPlayer {
         // Hello world! Standard output is very useful for debugging.
         // Everything you say here will be directly viewable in your terminal when you run a match!
 
-        // You can also use indicators to save debug notes in replays.
-        // rc.setIndicatorString("Hello world!");
+        MAP_WIDTH = rc.getMapWidth();
+        MAP_HEIGHT = rc.getMapHeight();
+        ROBOT_TYPE = rc.getType();
 
         while (true) {
             // This code runs during the entire lifespan of the robot, which is why it is in an infinite

@@ -3,11 +3,13 @@ package kolohe.robots.miner;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
+import kolohe.communication.Entity;
+import kolohe.communication.Message;
+import kolohe.communication.MessageType;
 import kolohe.state.machine.State;
 import kolohe.state.machine.Stimulus;
-import kolohe.utils.Tuple;
 
-import java.util.List;
+import java.util.Optional;
 
 public enum MinerState implements State {
     // is nearby resources, collects them
@@ -22,26 +24,76 @@ public enum MinerState implements State {
 
     @Override
     public State react(Stimulus stimulus, RobotController rc) throws GameActionException {
+        Optional<MapLocation> nextResourceLocation;
+
         switch (this) {
             case COLLECT:
+                // no more resources
                 if (!Miner.isAnyResourceInView(rc, stimulus.allLocationsWithinRadiusSquared)) {
-                    // TODO if miner receives location of resources, move to TARGET state
+                    // let other miners know that there are no more resources here
+                    Miner.communicator.sendMessage(rc, Message.buildSimpleLocationMessage(MessageType.NO_RESOURCES_LOCATION, stimulus.myLocation, Entity.ALL_MINERS));
+
+                    // see if other miners found any other resource locations
+                    nextResourceLocation = Miner.getClosestBroadcastedResourceLocation(stimulus.myLocation, stimulus.messages);
+
+                    // found other resources, so target them
+                    if (nextResourceLocation.isPresent()) {
+                        Miner.setTargetLocation(nextResourceLocation.get());
+                        return TARGET;
+                    }
+
+                    // no other resources found, so look for them
                     return EXPLORE;
                 }
 
+                // still resources to collect
                 return COLLECT;
             case EXPLORE:
+                // found some resources, go collect them
                 if (Miner.isAnyResourceInView(rc, stimulus.allLocationsWithinRadiusSquared)) {
                     return COLLECT;
                 }
 
-                // TODO if miner receives location of resources, move to TARGET state
+                // see if other miners found any other resource locations
+                nextResourceLocation = Miner.getClosestBroadcastedResourceLocation(stimulus.myLocation, stimulus.messages);
+
+                // found other resources, so target them
+                if (nextResourceLocation.isPresent()) {
+                    Miner.setTargetLocation(nextResourceLocation.get());
+                    return TARGET;
+                }
+
+                // no other resources found, so continue to look for them
                 return EXPLORE;
             case TARGET:
+                // TODO once value is associated to a location, compare value of seen resources to target resource
+                // found some resources, go collect them
                 if (Miner.isAnyResourceInView(rc, stimulus.allLocationsWithinRadiusSquared)) {
                     return COLLECT;
                 }
 
+                // see if other miners found any closer resource locations to go to, and change course if so
+                nextResourceLocation = Miner.getClosestBroadcastedResourceLocation(stimulus.myLocation, stimulus.messages);
+                if (nextResourceLocation.isPresent()) {
+                    if (stimulus.myLocation.distanceSquaredTo(nextResourceLocation.get()) < stimulus.myLocation.distanceSquaredTo(Miner.getTargetLocation())) {
+                        Miner.setTargetLocation(nextResourceLocation.get());
+                        return TARGET;
+                    }
+                }
+
+                // no more resources at the target location
+                if (Miner.isResourceLocationDepleted(Miner.getTargetLocation(), stimulus.messages)) {
+                    // use the next closest possible target location
+                    if (nextResourceLocation.isPresent()) {
+                        Miner.setTargetLocation(nextResourceLocation.get());
+                        return TARGET;
+                    }
+
+                    // no other known resource locations
+                    return EXPLORE;
+                }
+
+                // continue to target known resource location
                 return TARGET;
             default: throw new RuntimeException("Should not be here");
         }

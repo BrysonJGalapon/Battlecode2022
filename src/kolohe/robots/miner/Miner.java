@@ -1,11 +1,13 @@
 package kolohe.robots.miner;
 
 import battlecode.common.*;
-import kolohe.communication.Communicate;
+import kolohe.communication.Communicator;
+import kolohe.communication.Entity;
+import kolohe.communication.Message;
+import kolohe.communication.MessageType;
+import kolohe.communication.basic.BasicCommunicator;
 import kolohe.pathing.Fuzzy;
 import kolohe.pathing.PathFinder;
-import kolohe.pathing.TangentBug;
-import kolohe.robots.archon.ArchonState;
 import kolohe.state.machine.StateMachine;
 import kolohe.state.machine.Stimulus;
 import kolohe.utils.Tuple;
@@ -15,6 +17,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
+import static kolohe.RobotPlayer.ROBOT_TYPE;
 import static kolohe.utils.Utils.RNG;
 
 /*
@@ -25,18 +28,16 @@ import static kolohe.utils.Utils.RNG;
     - vision radius: 20
  */
 public class Miner {
-    public static final RobotType robotType = RobotType.MINER;
-
     private static final StateMachine<MinerState> stateMachine = StateMachine.startingAt(MinerState.EXPLORE);
-//    private static final PathFinder pathFinder = TangentBug.builder(robotType.visionRadiusSquared).build();
     private static final PathFinder pathFinder = new Fuzzy();
+    public static final Communicator communicator = new BasicCommunicator();
 
     private static int age = 0; // the current age of this robot
+    private static MapLocation targetLocation = null; // the current target location for this robot
 
     // caches
     private static int localGoldLocationsValidityAge = 0; // the age for which this cache is valid
     public static List<Tuple<MapLocation, Integer>> localGoldLocations = null;
-
     private static int localLeadLocationsValidityAge = 0; // the age for which this cache is valid
     public static List<Tuple<MapLocation, Integer>> localLeadLocations = null;
 
@@ -45,7 +46,8 @@ public class Miner {
 
         s.nearbyRobotsInfo = rc.senseNearbyRobots();
         s.myLocation = rc.getLocation();
-        s.allLocationsWithinRadiusSquared = rc.getAllLocationsWithinRadiusSquared(s.myLocation, robotType.visionRadiusSquared);
+        s.allLocationsWithinRadiusSquared = rc.getAllLocationsWithinRadiusSquared(s.myLocation, ROBOT_TYPE.visionRadiusSquared);
+        s.messages = communicator.receiveMessages(rc);
 
         // state-specific collection of stimuli
         switch (stateMachine.getCurrState()) {
@@ -79,10 +81,12 @@ public class Miner {
         if (goldLocationsInView.size() > 0) {
             // TODO decide location to go to as a function of gold quantity, instead of just distance
             MapLocation closestGoldLocation = getClosestResourceLocation(stimulus.myLocation, goldLocationsInView);
+
+            communicator.sendMessage(rc, Message.buildSimpleLocationMessage(MessageType.GOLD_LOCATION, closestGoldLocation, Entity.ALL_MINERS));
             rc.setIndicatorString(String.format("state: %s gold location: %s", stateMachine.getCurrState(), closestGoldLocation));
 
             // gold is close enough to mine
-            if (stimulus.myLocation.distanceSquaredTo(closestGoldLocation) < robotType.actionRadiusSquared) {
+            if (stimulus.myLocation.distanceSquaredTo(closestGoldLocation) < ROBOT_TYPE.actionRadiusSquared) {
                 if (rc.canMineGold(closestGoldLocation)) {
                     rc.mineGold(closestGoldLocation);
                 }
@@ -101,10 +105,12 @@ public class Miner {
         if (leadLocationsInView.size() > 0) {
             // TODO decide location to go to as a function of lead quantity, instead of just distance
             MapLocation closestLeadLocation = getClosestResourceLocation(stimulus.myLocation, leadLocationsInView);
+
+            communicator.sendMessage(rc, Message.buildSimpleLocationMessage(MessageType.LEAD_LOCATION, closestLeadLocation, Entity.ALL_MINERS));
             rc.setIndicatorDot(closestLeadLocation, 0,0,100);
 
             // lead is close enough to mine
-            if (stimulus.myLocation.distanceSquaredTo(closestLeadLocation) < robotType.actionRadiusSquared) {
+            if (stimulus.myLocation.distanceSquaredTo(closestLeadLocation) < ROBOT_TYPE.actionRadiusSquared) {
                 if (rc.canMineLead(closestLeadLocation)) {
                     rc.mineLead(closestLeadLocation);
                 }
@@ -117,6 +123,30 @@ public class Miner {
 
             return;
         }
+    }
+
+    public static boolean isResourceLocationDepleted(MapLocation loc, List<Message> messages) {
+        for (Message message : messages) {
+            if (!message.messageType.equals(MessageType.NO_RESOURCES_LOCATION)) {
+                continue;
+            }
+
+            MapLocation noResourceLocation = message.location;
+            // TODO NOTE: This assumes that only miners will be sending 'NO_RESOURCE_LOCATION' messages
+            if (loc.isWithinDistanceSquared(noResourceLocation, RobotType.MINER.visionRadiusSquared)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static void setTargetLocation(MapLocation targetLocation) {
+        Miner.targetLocation = targetLocation;
+    }
+
+    public static MapLocation getTargetLocation() {
+        return Miner.targetLocation;
     }
 
     public static void runExploreActions(RobotController rc, Stimulus stimulus) throws GameActionException {
@@ -142,6 +172,51 @@ public class Miner {
         }
 
         return false;
+    }
+
+    public static Optional<MapLocation> getClosestBroadcastedResourceLocation(MapLocation loc, List<Message> messages) {
+        // only consider 'resource location' messages and 'no resource location' messages
+        List<MapLocation> noResourceLocations = new LinkedList<>();
+        List<Tuple<MapLocation, Integer>> broadcastedResourceLocations = new LinkedList<>();
+        for (Message message : messages) {
+            switch (message.messageType) {
+                case GOLD_LOCATION:
+                case LEAD_LOCATION:
+                    // TODO once value is associated to a location, include amount of resource as Y()
+                    broadcastedResourceLocations.add(Tuple.of(message.location, 0));
+                    break;
+                case NO_RESOURCES_LOCATION:
+                    noResourceLocations.add(message.location);
+                    break;
+            }
+        }
+
+        // TODO NOTE: since we do not know the order for which these messages were written, it is possible that
+        //  a 'no resource location' message is still within the message queue when a NEW resource pops up nearby.
+        //  This can be fixed by storing an 'age' for which the message was written.
+        // get non-depleted resource locations
+        List<Tuple<MapLocation, Integer>> nonDepletedBroadcastedResourceLocations = new LinkedList<>();
+        for (Tuple<MapLocation, Integer> broadcastedResourceLocation : broadcastedResourceLocations) {
+            boolean isNonDepleted = true;
+            for (MapLocation noResourceLocation : noResourceLocations) {
+                // TODO NOTE: This assumes that only miners will be sending 'NO_RESOURCE_LOCATION' messages
+                if (broadcastedResourceLocation.getX().isWithinDistanceSquared(noResourceLocation, RobotType.MINER.visionRadiusSquared)) {
+                    isNonDepleted = false;
+                    break;
+                }
+            }
+
+            if (isNonDepleted) {
+                nonDepletedBroadcastedResourceLocations.add(broadcastedResourceLocation);
+            }
+        }
+
+        // found a non-depleted resource location, return the closest one
+        if (nonDepletedBroadcastedResourceLocations.size() > 0) {
+            return Optional.of(getClosestResourceLocation(loc, nonDepletedBroadcastedResourceLocations));
+        }
+
+        return Optional.empty();
     }
 
     public static List<Tuple<MapLocation, Integer>> getLeadLocationsInView(RobotController rc, MapLocation[] allLocationsWithinRadiusSquared) throws GameActionException {
@@ -210,30 +285,5 @@ public class Miner {
         }
 
         return goldLocations;
-    }
-
-    public static void sample(RobotController rc, Stimulus stimulus) throws GameActionException {
-        // Try to mine on squares around us.
-        MapLocation me = rc.getLocation();
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                MapLocation mineLocation = new MapLocation(me.x + dx, me.y + dy);
-                // Notice that the Miner's action cooldown is very low.
-                // You can mine multiple times per turn!
-                while (rc.canMineGold(mineLocation)) {
-                    rc.mineGold(mineLocation);
-                }
-                while (rc.canMineLead(mineLocation)) {
-                    rc.mineLead(mineLocation);
-                }
-            }
-        }
-
-        // Also try to move randomly.
-        Direction dir = Utils.ALL_MOVEMENT_DIRECTIONS[RNG.nextInt(Utils.ALL_MOVEMENT_DIRECTIONS.length)];
-        if (rc.canMove(dir)) {
-            rc.move(dir);
-            System.out.println("I moved!");
-        }
     }
 }
