@@ -4,23 +4,45 @@ import battlecode.common.RobotController;
 import kolohe.state.machine.State;
 import kolohe.state.machine.Stimulus;
 
+import java.util.Optional;
+
 import static kolohe.utils.Parameters.*;
 
 public enum ArchonState implements State {
     // prioritize creation of resource-collection units
-    RESOURCE_COLLECTION,
+    RESOURCE_COLLECTION(0),
 
     // prioritize creation of defensive units
-    DEFEND,
+    DEFEND(1),
 
     // prioritize creation of attacking units
-    ATTACK,
+    ATTACK(2),
 
     // like defend, but more urgent
-    SURVIVE,
+    SURVIVE(3),
 
     // ... plus other states
     ;
+
+    private final int encoding;
+
+    ArchonState(int encoding) {
+        this.encoding = encoding;
+    }
+
+    public int encode() {
+        return encoding;
+    }
+
+    public static Optional<ArchonState> decode(int encoding) {
+        for (ArchonState archonState : ArchonState.values()) {
+            if (archonState.encoding == encoding) {
+                return Optional.of(archonState);
+            }
+        }
+
+        return Optional.empty();
+    }
 
     @Override
     public State react(Stimulus stimulus, RobotController rc) {
@@ -33,7 +55,7 @@ public enum ArchonState implements State {
         int archonCount = rc.getArchonCount();
         int averageRobotCountPerArchon = robotCount / archonCount;
 
-        System.out.println("Average Robot Count per Archon: " + averageRobotCountPerArchon);
+//        System.out.println("Average Robot Count per Archon: " + averageRobotCountPerArchon);
 
         int roundNum = rc.getRoundNum();
 

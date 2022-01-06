@@ -1,9 +1,10 @@
-package kolohe.pathing;
+package kolohe.pathing.pathfinder;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
+import kolohe.pathing.RotationPreference;
 import kolohe.utils.Tuple;
 import kolohe.utils.Utils;
 

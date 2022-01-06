@@ -1,11 +1,17 @@
 package kolohe.pathing;
 
+import kolohe.utils.Utils;
+
 public enum RotationPreference {
     LEFT,
     RIGHT,
     RANDOM;
 
     public static RotationPreference[] CONCRETE_ROTATION_PREFERENCES = new RotationPreference[]{LEFT, RIGHT};
+
+    public static RotationPreference getRandomConcreteRotationPreference() {
+        return Utils.getRandomValueFrom(CONCRETE_ROTATION_PREFERENCES);
+    }
 
     public RotationPreference opposite() {
         switch (this) {

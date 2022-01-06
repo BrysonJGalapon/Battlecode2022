@@ -1,14 +1,14 @@
-package kolohe.pathing;
+package kolohe.pathing.pathfinder;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
+import kolohe.pathing.RotationPreference;
+import kolohe.pathing.WallFollower;
 import kolohe.utils.Utils;
 
 import java.util.Optional;
-
-import static kolohe.utils.Utils.MAX_RUBBLE;
 
 public class Bug extends WallFollower implements PathFinder {
     private final RotationPreference rotationPreference;

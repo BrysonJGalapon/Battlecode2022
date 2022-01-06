@@ -5,15 +5,16 @@ import kolohe.communication.Communicator;
 import kolohe.communication.Entity;
 import kolohe.communication.Message;
 import kolohe.communication.MessageType;
+import kolohe.robots.archon.ArchonState;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static kolohe.RobotPlayer.*;
-import static kolohe.utils.Utils.RNG;
+import static kolohe.utils.Utils.getRng;
 
 /*
+    Allocate first 4 indices of shared array to storing ArchonState messages.
+
     Each index in the shared array represents a message. Keeps a pointer to the next index of
     the shared array to write the next message to. Increments pointer after every message is sent. Pointer
     returns to the beginning of the array once it falls off the end.
@@ -31,102 +32,156 @@ public class BasicCommunicator implements Communicator {
     // then read that many bits
     // contiguous 1024 bits
 
-    // message types = 4 bits
-    // map location = 12 bits
+    private static final int NUM_RESERVED_ARCHON_STATE_INDICES = 4;
+    private static final int ARCHON_STATE_BIT_LENGTH = 3; // supports 2^3 = 8 difference archon states
 
-
-    //private static final int ENTITY_BIT_LENGTH = 2; // supports 2^2 = 4 different entities
-
-    // store timestamp
-    //private static final int TIMESTAMP = 1;
-    private static final int MESSAGE_TYPE_BIT_LENGTH = 4; // supports 2^4 = 16 different message types
+    private static final int ENTITY_BIT_LENGTH = 2; // supports 2^2 = 4 different entities
+    private static final int MESSAGE_TYPE_BIT_LENGTH = 2; // supports 2^2 = 4 different message types
     private static final int MAP_LOCATION_BIT_LENGTH = 12; // supports 2^12 = 4,096 different map locations
 
-    // 4 indices archon states
-
-    private int idxMiner = 0;
-    private int idxArchon = 7;
-    private int idxBuilder = 14;
-    private int idxLaboratory = 21;
-    private int idxSage = 28;
-    private int idxSoldier = 35;
-    private int idxWatchtower = 42;
-
-    public static int lastIndex = 0;
+    private int idx = 0;
+    private int archonIdx = 0;
 
     @Override
     public void sendMessage(RobotController rc, Message message) throws GameActionException {
-        int encoding = encode(message);
-
-        switch (rc.getType()) {
-            case MINER: {
-                rc.writeSharedArray(this.idxMiner, encoding);
-                idxMiner = (idxMiner + 1) % 7;
-                lastIndex = idxMiner;
-                break;
-            }
-            case ARCHON: {
-                rc.writeSharedArray(this.idxArchon, encoding);
-                idxArchon = (idxArchon + 1) % 14;
-                if (idxArchon == 0) { idxArchon = 7; }
-                lastIndex = idxArchon;
-                break;
-            }
-            case BUILDER: {
-                rc.writeSharedArray(this.idxBuilder, encoding);
-                idxBuilder = (idxBuilder + 1) % 21;
-                if (idxBuilder == 0) { idxBuilder = 14; }
-                lastIndex = idxBuilder;
-                break;
-            }
-            case LABORATORY: {
-                rc.writeSharedArray(this.idxLaboratory, encoding);
-                idxLaboratory = (idxLaboratory + 1) % 28;
-                if (idxLaboratory == 0) { idxLaboratory = 21; }
-                lastIndex = idxLaboratory;
-                break;
-            }
-            case SAGE: {
-                rc.writeSharedArray(this.idxSage, encoding);
-                idxSage = (idxSage + 1) % 35;
-                if (idxSage == 0) { idxSage = 28; }
-                lastIndex = idxSage;
-                break;
-            }
-            case SOLDIER: {
-                rc.writeSharedArray(this.idxSoldier, encoding);
-                idxSoldier = (idxSoldier + 1) % 42;
-                if (idxSoldier == 0) { idxSoldier = 35; }
-                lastIndex = idxSoldier;
-                break;
-            }
-            case WATCHTOWER: {
-                rc.writeSharedArray(this.idxWatchtower, encoding);
-                idxWatchtower = (idxWatchtower + 1) % 49;
-                if (idxWatchtower == 0) { idxWatchtower = 42; }
-                lastIndex = idxWatchtower;
-                break;
-            }
-            default: {
-                throw new RuntimeException("Should not be here");
-            }
+        if (message.messageType.equals(MessageType.ARCHON_STATE)) {
+            sendArchonStateMessage(rc, message);
+            return;
         }
 
+        // do not write to archon state indices
+        if (this.idx < NUM_RESERVED_ARCHON_STATE_INDICES) {
+            this.idx = NUM_RESERVED_ARCHON_STATE_INDICES;
+        }
+
+        int encoding = encode(message);
+        rc.writeSharedArray(this.idx, encoding);
+        this.idx = (this.idx + 1) % SHARED_ARRAY_LENGTH;
     }
 
     @Override
-    public List<Message> receiveMessages(RobotController rc, int limit) throws GameActionException {
+    public List<Message> receiveMessages(RobotController rc, int limit, int bytecodeLimit) throws GameActionException {
+        int initialBytecodesLeft = Clock.getBytecodesLeft();
         List<Message> messages = new LinkedList<>();
 
-        for (int i = 0; i < limit; i++) {
-            int encoding = rc.readSharedArray(RNG.nextInt(SHARED_ARRAY_LENGTH));
-            Optional<Message> message = decode(encoding);
+        int[] indices = new int[SHARED_ARRAY_LENGTH];
+        for (int i = 0; i < SHARED_ARRAY_LENGTH; i++) {
+            indices[i] = i;
+        }
+
+        for (int i = 0; i < SHARED_ARRAY_LENGTH; i++) {
+            if (initialBytecodesLeft-Clock.getBytecodesLeft() > bytecodeLimit) {
+                break;
+            }
+
+            if (messages.size() == limit) {
+                break;
+            }
+
+            int j = i + getRng().nextInt(SHARED_ARRAY_LENGTH-i);
+
+            // swap i, j indices
+            int tmp = indices[i];
+            indices[i] = indices[j];
+            indices[j] = tmp;
+
+            int indexToRead = indices[i];
+
+            int encoding = rc.readSharedArray(indexToRead);
+
+            if (encoding == 0) {
+                continue;
+            }
+
+            Optional<Message> message;
+
+            // decode the message, based on the index
+            if (indexToRead < NUM_RESERVED_ARCHON_STATE_INDICES) {
+                message = decodeArchonStateMessage(encoding);
+            } else {
+                message = decode(encoding);
+            }
+
+            // load the message if current robot is a valid recipient of it
             if (message.isPresent() && isRecipientOfMessage(ROBOT_TYPE, message.get())) {
                 messages.add(message.get());
             }
         }
 
+//
+//        while (indicesRead.size() < limit || indicesRead.size() >= SHARED_ARRAY_LENGTH) {
+//            // prevent reading from same index repeatedly
+//            int indexToRead = getRng().nextInt(SHARED_ARRAY_LENGTH);
+//            if (indicesRead.contains(indexToRead)) {
+//                continue;
+//            }
+//
+//            int encoding = rc.readSharedArray(indexToRead);
+//
+//            indicesRead.add(indexToRead);
+//            if (encoding == 0) {
+//                continue;
+//            }
+//
+//            Optional<Message> message;
+//
+//            // decode the message, based on the index
+//            if (indexToRead < NUM_RESERVED_ARCHON_STATE_INDICES) {
+//                message = decodeArchonStateMessage(encoding);
+//            } else {
+//                message = decode(encoding);
+//            }
+//
+//            // load the message if current robot is a valid recipient of it
+//            if (message.isPresent() && isRecipientOfMessage(ROBOT_TYPE, message.get())) {
+//                messages.add(message.get());
+//            }
+//        }
+
         return messages;
+    }
+
+    // reservoir sampling: https://www.geeksforgeeks.org/reservoir-sampling/
+    private int[] getKRandomIndices(int n, int k) {
+        int[] indices = new int[k];
+        for (int i = 0; i < k; i++) {
+            indices[i] = i;
+        }
+
+        for (int i = k; i < n; i++) {
+            int j = getRng().nextInt(i+1);
+            if (0 < j && j < k) {
+                indices[j] = i;
+            }
+        }
+
+        return indices;
+    }
+
+    private static int[] permutedIndices(int n) {
+        Random r = getRng();
+
+        int[] indices = new int[n];
+        for (int i = 0; i < n; i++) {
+            indices[i] = i;
+        }
+
+        for (int i = 0; i < n; i++) {
+            int j = i + r.nextInt(n-i);
+
+            // swap
+            int tmp = indices[i];
+            indices[i] = indices[j];
+            indices[j] = tmp;
+        }
+
+        return indices;
+    }
+
+    private void sendArchonStateMessage(RobotController rc, Message message) throws GameActionException {
+        int encoding = encodeArchonStateMessage(message);
+        rc.writeSharedArray(this.archonIdx, encoding);
+        this.archonIdx = (this.archonIdx + 1) % NUM_RESERVED_ARCHON_STATE_INDICES;
     }
 
     private static boolean isRecipientOfMessage(RobotType robotType, Message message) {
@@ -146,8 +201,43 @@ public class BasicCommunicator implements Communicator {
         }
     }
 
-    /* | data | messageType | timestamp | length of data | */
-    // add to message length of data
+    private static int encodeArchonStateMessage(Message message) {
+        int encoding = 0;
+
+        // append map location
+        encoding = append(encoding, encodeMapLocation(message.location), MAP_LOCATION_BIT_LENGTH);
+
+        // append archon state
+        encoding = append(encoding, message.archonState.encode(), ARCHON_STATE_BIT_LENGTH);
+
+        return encoding;
+    }
+
+    private static Optional<Message> decodeArchonStateMessage(int encoding) {
+        Message message = new Message(MessageType.ARCHON_STATE, Entity.ALL_ROBOTS);
+
+        // extract archon state encoding
+        int archonStateEncoding = encoding & getBitMask(ARCHON_STATE_BIT_LENGTH);
+        Optional<ArchonState> archonState = ArchonState.decode(archonStateEncoding);
+        encoding = encoding >> ARCHON_STATE_BIT_LENGTH;
+        if (!archonState.isPresent()) {
+            return Optional.empty();
+        }
+
+        // extract map location encoding
+        int mapLocationEncoding = encoding & getBitMask(MAP_LOCATION_BIT_LENGTH);
+        Optional<MapLocation> mapLocation = decodeMapLocation(mapLocationEncoding);
+        if (!mapLocation.isPresent()) {
+            return Optional.empty();
+        }
+        encoding = encoding >> MAP_LOCATION_BIT_LENGTH;
+
+        message.archonState = archonState.get();
+        message.location = mapLocation.get();
+
+        return Optional.of(message);
+    }
+
     private static int encode(Message message) {
         int encoding = 0;
 
@@ -156,6 +246,7 @@ public class BasicCommunicator implements Communicator {
             case GOLD_LOCATION:
             case LEAD_LOCATION:
             case NO_RESOURCES_LOCATION:
+            case BUILD_WATCHTOWER_LOCATION:
                 encoding = append(encoding, encodeMapLocation(message.location), MAP_LOCATION_BIT_LENGTH);
                 break;
             default: throw new RuntimeException("Should not be here");
@@ -172,24 +263,9 @@ public class BasicCommunicator implements Communicator {
 
     public static Optional<Message> decode(int encoding) {
         // extract Entity encoding
-        // int entityEncoding = encoding & getBitMask(ENTITY_BIT_LENGTH);
-        // Optional<Entity> entity = Entity.decode(entityEncoding);
-        // encoding = encoding >> ENTITY_BIT_LENGTH;
-        // if (!entity.isPresent()) {
-        //    return Optional.empty();
-        // }
-
-        Optional<Entity> entity = Optional.empty();
-        if (lastIndex >= 0 && lastIndex < 7) entity = Optional.of(Entity.ALL_MINERS);
-        if (lastIndex >= 7 && lastIndex < 14) entity = Optional.of(Entity.ALL_ARCHONS);
-        if (lastIndex >= 14 && lastIndex < 21) entity = Optional.of(Entity.ALL_BUILDERS);
-        if (lastIndex >= 21 && lastIndex < 28) entity = Optional.of(Entity.ALL_LABORATORIES);
-        if (lastIndex >= 28 && lastIndex < 35) entity = Optional.of(Entity.ALL_SAGES);
-        if (lastIndex >= 35 && lastIndex < 42) entity = Optional.of(Entity.ALL_SOLDIERS);
-        if (lastIndex >= 42 && lastIndex < 49) entity = Optional.of(Entity.ALL_WATCHTOWERS);
-
-
-
+        int entityEncoding = encoding & getBitMask(ENTITY_BIT_LENGTH);
+        Optional<Entity> entity = Entity.decode(entityEncoding);
+        encoding = encoding >> ENTITY_BIT_LENGTH;
         if (!entity.isPresent()) {
             return Optional.empty();
         }
@@ -210,6 +286,7 @@ public class BasicCommunicator implements Communicator {
             case GOLD_LOCATION:
             case LEAD_LOCATION:
             case NO_RESOURCES_LOCATION:
+            case BUILD_WATCHTOWER_LOCATION:
                 int mapLocationEncoding = encoding & getBitMask(MAP_LOCATION_BIT_LENGTH);
                 Optional<MapLocation> mapLocation = decodeMapLocation(mapLocationEncoding);
                 if (!mapLocation.isPresent()) {

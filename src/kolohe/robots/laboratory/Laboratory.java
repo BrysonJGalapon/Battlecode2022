@@ -11,7 +11,8 @@ import battlecode.common.RobotController;
     - bytecode limit: 5,000
  */
 public class Laboratory {
-    public static void run(RobotController rc)throws GameActionException {
+    public static void run(RobotController rc) throws GameActionException {
+        rc.getTransmutationRate();
         // TODO
     }
 }

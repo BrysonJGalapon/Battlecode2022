@@ -12,6 +12,8 @@ import kolohe.state.machine.Stimulus;
 
 import java.util.Optional;
 
+import static kolohe.RobotPlayer.ROBOT_TYPE;
+
 public enum MinerState implements State {
     // is nearby resources, collects them
     COLLECT,
@@ -33,7 +35,8 @@ public enum MinerState implements State {
         switch (this) {
             case COLLECT:
                 // no more resources
-                if (!Miner.isAnyResourceInView(rc, stimulus.nearbyLocationsWithGold, stimulus.nearbyLocationsWithLead)) {
+
+                if (!Miner.isAnyResourceInView(stimulus.nearbyLocationsWithGold, stimulus.nearbyLocationsWithLead)) {
                     // let other miners know that there are no more resources here
                     Miner.communicator.sendMessage(rc, Message.buildSimpleLocationMessage(MessageType.NO_RESOURCES_LOCATION, stimulus.myLocation, Entity.ALL_MINERS));
 
@@ -54,7 +57,7 @@ public enum MinerState implements State {
                 return COLLECT;
             case EXPLORE:
                 // found some resources, go collect them
-                if (Miner.isAnyResourceInView(rc, stimulus.nearbyLocationsWithGold, stimulus.nearbyLocationsWithLead)) {
+                if (Miner.isAnyResourceInView(stimulus.nearbyLocationsWithGold, stimulus.nearbyLocationsWithLead)) {
                     return COLLECT;
                 }
 
@@ -72,7 +75,7 @@ public enum MinerState implements State {
             case TARGET:
                 // TODO once value is associated to a location, compare value of seen resources to target resource
                 // found some resources, go collect them
-                if (Miner.isAnyResourceInView(rc, stimulus.nearbyLocationsWithGold, stimulus.nearbyLocationsWithLead)) {
+                if (Miner.isAnyResourceInView(stimulus.nearbyLocationsWithGold, stimulus.nearbyLocationsWithLead)) {
                     return COLLECT;
                 }
 
@@ -85,7 +88,7 @@ public enum MinerState implements State {
                     }
                 }
 
-                // no more resources at the target location
+                // other miners are saying there are no more resources at the target location
                 if (Miner.isResourceLocationDepleted(Miner.getTargetLocation(), stimulus.messages)) {
                     // use the next closest possible target location
                     if (nextResourceLocation.isPresent()) {
@@ -95,6 +98,16 @@ public enum MinerState implements State {
 
                     // no other known resource locations
                     return EXPLORE;
+                }
+
+                // I'm at the target location but there are no more resources here
+                if (stimulus.myLocation.equals(Miner.getTargetLocation())) {
+                    int lead = rc.senseLead(Miner.getTargetLocation());
+                    int gold = rc.senseGold(Miner.getTargetLocation());
+                    if (lead == 0 && gold == 0) {
+                        // let other miners know there are no resources here
+                        Miner.communicator.sendMessage(rc, Message.buildSimpleLocationMessage(MessageType.NO_RESOURCES_LOCATION, stimulus.myLocation, Entity.ALL_MINERS));
+                    }
                 }
 
                 // continue to target known resource location

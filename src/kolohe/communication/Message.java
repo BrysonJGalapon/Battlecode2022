@@ -1,6 +1,7 @@
 package kolohe.communication;
 
 import battlecode.common.MapLocation;
+import kolohe.robots.archon.ArchonState;
 
 // TODO dayne
 public class Message {
@@ -31,6 +32,7 @@ public class Message {
 
     // data fields
     public MapLocation location;
+    public ArchonState archonState;
 
     public static Message buildSimpleLocationMessage(MessageType messageType, MapLocation location, Entity entity) {
         Message m = new Message(messageType, entity);
