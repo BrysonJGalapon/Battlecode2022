@@ -5,9 +5,9 @@ import kolohe.state.machine.StateMachine;
 import kolohe.state.machine.Stimulus;
 import kolohe.utils.Utils;
 
-import java.util.Map;
 import java.util.Optional;
 
+import static kolohe.RobotPlayer.*;
 import static kolohe.utils.Utils.RNG;
 
 /*
@@ -50,9 +50,12 @@ import static kolohe.utils.Utils.RNG;
 public class Archon {
     private static final StateMachine<ArchonState> stateMachine = StateMachine.startingAt(ArchonState.RESOURCE_COLLECTION);
 
+    public static int[] buildDistribution = null;
+
     private static Stimulus collectStimulus(RobotController rc) {
         Stimulus s = new Stimulus();
-        s.nearbyRobotsInfo = rc.senseNearbyRobots();
+        s.friendlyNearbyRobotsInfo = rc.senseNearbyRobots(ROBOT_TYPE.visionRadiusSquared, MY_TEAM);
+        s.enemyNearbyRobotsInfo = rc.senseNearbyRobots(ROBOT_TYPE.visionRadiusSquared, OPP_TEAM);
         return s;
     }
 
@@ -60,6 +63,7 @@ public class Archon {
         Stimulus stimulus = collectStimulus(rc);
         stateMachine.transition(stimulus, rc);
 
+        rc.setIndicatorString("I'm in state: " + stateMachine.getCurrState());
         switch (stateMachine.getCurrState()) {
             case RESOURCE_COLLECTION:   runResourceCollectionActions(rc, stimulus); break;
             case DEFEND:                runDefendActions(rc, stimulus); break;
@@ -70,28 +74,72 @@ public class Archon {
     }
 
     public static void runResourceCollectionActions(RobotController rc, Stimulus stimulus) throws GameActionException {
-        buildMiner(rc);
+        if (buildDistribution == null) {
+            throw new RuntimeException("Should not be here");
+        }
+
+        RobotType robotType = sampleBuildDistribution(buildDistribution);
+        tryBuild(robotType, rc);
     }
 
     public static void runDefendActions(RobotController rc, Stimulus stimulus) throws GameActionException {
+        if (buildDistribution == null) {
+            throw new RuntimeException("Should not be here");
+        }
 
+        RobotType robotType = sampleBuildDistribution(buildDistribution);
+        tryBuild(robotType, rc);
     }
 
     public static void runAttackActions(RobotController rc, Stimulus stimulus) throws GameActionException {
+        if (buildDistribution == null) {
+            throw new RuntimeException("Should not be here");
+        }
 
+        RobotType robotType = sampleBuildDistribution(buildDistribution);
+        tryBuild(robotType, rc);
     }
 
     public static void runSurviveActions(RobotController rc, Stimulus stimulus) throws GameActionException {
-
-    }
-
-    private static Optional<Direction> buildMiner(RobotController rc) throws GameActionException {
-        Direction direction = Utils.getRandomDirection();
-        if (!rc.canBuildRobot(RobotType.MINER, direction)) {
-            return Optional.empty();
+        if (buildDistribution == null) {
+            throw new RuntimeException("Should not be here");
         }
 
-        rc.buildRobot(RobotType.MINER, direction);
-        return Optional.of(direction);
+        RobotType robotType = sampleBuildDistribution(buildDistribution);
+        tryBuild(robotType, rc);
+    }
+
+    private static Optional<Direction> tryBuild(RobotType robotType, RobotController rc) throws GameActionException {
+        Direction direction = Utils.getRandomDirection();
+        for (int i = 0; i < Utils.ALL_MOVEMENT_DIRECTIONS.length; i++) {
+            if (!rc.canBuildRobot(robotType, direction)) {
+                continue;
+            }
+
+            rc.buildRobot(robotType, direction);
+            return Optional.of(direction);
+        }
+
+        return Optional.empty();
+    }
+
+    private static RobotType sampleBuildDistribution(int[] buildDistribution) {
+        //   {RobotType.MINER, RobotType.BUILDER, RobotType.SAGE, RobotType.SOLDIER};
+        int minerSum = buildDistribution[0];
+        int builderSum = minerSum + buildDistribution[1];
+        int sageSum = builderSum + buildDistribution[2];
+        int totalSum = sageSum + buildDistribution[3];
+
+        int sample = RNG.nextInt(totalSum);
+
+        if (sample < minerSum) {
+            return RobotType.MINER;
+        } else if (sample < builderSum) {
+            return RobotType.BUILDER;
+        } else if (sample < sageSum) {
+            return RobotType.SAGE;
+        } else {
+            return RobotType.SOLDIER;
+        }
     }
 }

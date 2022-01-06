@@ -69,6 +69,7 @@ public class BasicCommunicator implements Communicator {
         }
     }
 
+    /* | data | messageType | entity | */
     private static int encode(Message message) {
         int encoding = 0;
 
@@ -93,7 +94,7 @@ public class BasicCommunicator implements Communicator {
 
     private static Optional<Message> decode(int encoding) {
         // extract Entity encoding
-        int entityEncoding = encoding & getBitMask(ENTITY_BIT_LENGTH);;
+        int entityEncoding = encoding & getBitMask(ENTITY_BIT_LENGTH);
         Optional<Entity> entity = Entity.decode(entityEncoding);
         encoding = encoding >> ENTITY_BIT_LENGTH;
         if (!entity.isPresent()) {
@@ -120,6 +121,7 @@ public class BasicCommunicator implements Communicator {
                 if (!mapLocation.isPresent()) {
                     return Optional.empty();
                 }
+                encoding = encoding >> MAP_LOCATION_BIT_LENGTH;
                 message.location = mapLocation.get();
                 break;
             default: throw new RuntimeException("Should not be here");

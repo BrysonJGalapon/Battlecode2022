@@ -15,7 +15,7 @@ public abstract class WallFollower {
     private int wallDetectionTreshold = DEFAULT_WALL_DETECTION_THRESHOLD;
 
     protected boolean isWall(MapLocation loc, RobotController rc) throws GameActionException {
-        boolean isWall = rc.senseRubble(loc) >= wallDetectionTreshold;
+        boolean isWall = rc.onTheMap(loc) &&  rc.senseRubble(loc) >= wallDetectionTreshold;
         if (isWall) {
             rc.setIndicatorDot(loc, 255, 0,0);
         } else {

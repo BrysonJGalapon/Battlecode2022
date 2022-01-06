@@ -8,7 +8,9 @@ import java.util.List;
 
 public class Stimulus {
     public MapLocation myLocation;
-    public RobotInfo[] nearbyRobotsInfo;
-    public MapLocation[] allLocationsWithinRadiusSquared;
+    public RobotInfo[] friendlyNearbyRobotsInfo;
+    public RobotInfo[] enemyNearbyRobotsInfo;
+    public MapLocation[] nearbyLocationsWithGold;
+    public MapLocation[] nearbyLocationsWithLead;
     public List<Message> messages;
 }

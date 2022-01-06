@@ -4,6 +4,8 @@ import battlecode.common.RobotController;
 import kolohe.state.machine.State;
 import kolohe.state.machine.Stimulus;
 
+import static kolohe.utils.Parameters.*;
+
 public enum ArchonState implements State {
     // prioritize creation of resource-collection units
     RESOURCE_COLLECTION,
@@ -22,18 +24,71 @@ public enum ArchonState implements State {
 
     @Override
     public State react(Stimulus stimulus, RobotController rc) {
+        // TODO NOTE: basing transitions on total robot count is cheap (20 bytecode) and requires no communication,
+        //  but can greatly skew the distribution of robots that ACTUALLY get created.
+        //
+        // TODO: Absolutely need to factor in local stimulus to make these transitions
+
+        int robotCount = rc.getRobotCount();
+        int archonCount = rc.getArchonCount();
+        int averageRobotCountPerArchon = robotCount / archonCount;
+
+        System.out.println("Average Robot Count per Archon: " + averageRobotCountPerArchon);
+
+        int roundNum = rc.getRoundNum();
+
         switch (this) {
             case RESOURCE_COLLECTION:
-                // TODO after certain amount of resources collected, move to defend state
+                if (averageRobotCountPerArchon < ARCHON_ANY_TO_SURVIVE_ROBOT_COUNT_THRESHOLD && roundNum > ARCHON_SURVIVE_GRACE_PERIOD) {
+                    Archon.buildDistribution = ARCHON_SURVIVE_BUILD_DISTRIBUTION;
+                    return SURVIVE;
+                }
+
+                if (averageRobotCountPerArchon > ARCHON_RESOURCE_COLLECTION_TO_DEFEND_ROBOT_COUNT_THRESHOLD) {
+                    Archon.buildDistribution = ARCHON_DEFEND_BUILD_DISTRIBUTION;
+                    return DEFEND;
+                }
+
+                Archon.buildDistribution = ARCHON_RESOURCE_COLLECTION_BUILD_DISTRIBUTION;
                 return RESOURCE_COLLECTION;
             case DEFEND:
-                // TODO after certain amount of defense is created, move to attack state
+                if (averageRobotCountPerArchon < ARCHON_ANY_TO_SURVIVE_ROBOT_COUNT_THRESHOLD && roundNum > ARCHON_SURVIVE_GRACE_PERIOD) {
+                    Archon.buildDistribution = ARCHON_SURVIVE_BUILD_DISTRIBUTION;
+                    return SURVIVE;
+                }
+
+                if (averageRobotCountPerArchon < ARCHON_DEFEND_TO_RESOURCE_COLLECTION_ROBOT_COUNT_THRESHOLD) {
+                    Archon.buildDistribution = ARCHON_RESOURCE_COLLECTION_BUILD_DISTRIBUTION;
+                    return RESOURCE_COLLECTION;
+                }
+
+                if (averageRobotCountPerArchon > ARCHON_DEFEND_TO_ATTACK_ROBOT_COUNT_THRESHOLD) {
+                    Archon.buildDistribution = ARCHON_ATTACK_BUILD_DISTRIBUTION;
+                    return ATTACK;
+                }
+
+                Archon.buildDistribution = ARCHON_DEFEND_BUILD_DISTRIBUTION;
                 return DEFEND;
             case ATTACK:
-                // TODO if defense is not good enough, move to defend state
+                if (averageRobotCountPerArchon < ARCHON_ANY_TO_SURVIVE_ROBOT_COUNT_THRESHOLD && roundNum > ARCHON_SURVIVE_GRACE_PERIOD) {
+                    Archon.buildDistribution = ARCHON_SURVIVE_BUILD_DISTRIBUTION;
+                    return SURVIVE;
+                }
+
+                if (averageRobotCountPerArchon < ARCHON_ATTACK_TO_DEFEND_ROBOT_COUNT_THRESHOLD) {
+                    Archon.buildDistribution = ARCHON_DEFEND_BUILD_DISTRIBUTION;
+                    return DEFEND;
+                }
+
+                Archon.buildDistribution = ARCHON_ATTACK_BUILD_DISTRIBUTION;
                 return ATTACK;
             case SURVIVE:
-                // TODO after archon is no longer in urgent danger, move to defend state
+                if (averageRobotCountPerArchon > ARCHON_SURVIVE_TO_DEFEND_ROBOT_COUNT_THRESHOLD) {
+                    Archon.buildDistribution = ARCHON_DEFEND_BUILD_DISTRIBUTION;
+                    return DEFEND;
+                }
+
+                Archon.buildDistribution = ARCHON_SURVIVE_BUILD_DISTRIBUTION;
                 return SURVIVE;
 
             default: throw new RuntimeException("Should not be here");

@@ -17,8 +17,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
-import static kolohe.RobotPlayer.BIRTH_YEAR;
-import static kolohe.RobotPlayer.ROBOT_TYPE;
+import static kolohe.RobotPlayer.*;
 import static kolohe.utils.Parameters.MINER_RECEIVE_MESSAGE_LIMIT;
 
 /*
@@ -35,21 +34,19 @@ public class Miner {
 
     private static MapLocation targetLocation = null; // the current target location for this robot
 
+    public static MapLocation[] nearbyLocationsWithGold;
+    public static MapLocation[] nearbyLocationsWithLead;
+
     // state
     private static Direction lastDirectionMoved;
-
-    // caches
-    private static int localGoldLocationsValidityAge = -1; // the age for which this cache is valid
-    public static List<Tuple<MapLocation, Integer>> localGoldLocations = null;
-    private static int localLeadLocationsValidityAge = -1; // the age for which this cache is valid
-    public static List<Tuple<MapLocation, Integer>> localLeadLocations = null;
 
     private static Stimulus collectStimulus(RobotController rc) throws GameActionException {
         Stimulus s = new Stimulus();
 
-        s.nearbyRobotsInfo = rc.senseNearbyRobots();
         s.myLocation = rc.getLocation();
-        s.allLocationsWithinRadiusSquared = rc.getAllLocationsWithinRadiusSquared(s.myLocation, ROBOT_TYPE.visionRadiusSquared);
+        s.enemyNearbyRobotsInfo = rc.senseNearbyRobots(ROBOT_TYPE.visionRadiusSquared, OPP_TEAM);
+        s.nearbyLocationsWithGold = rc.senseNearbyLocationsWithGold(ROBOT_TYPE.visionRadiusSquared);
+        s.nearbyLocationsWithLead = rc.senseNearbyLocationsWithLead(ROBOT_TYPE.visionRadiusSquared);
         s.messages = communicator.receiveMessages(rc, MINER_RECEIVE_MESSAGE_LIMIT);
 
         // state-specific collection of stimuli
@@ -81,33 +78,31 @@ public class Miner {
     }
 
     public static void runCollectActions(RobotController rc, Stimulus stimulus) throws GameActionException {
-        // TODO re-enable gold collection when either we have more information to know exactly where the gold is, or when
-        //  bytecode usage is not an issue
-//        // collect gold, if any
-//        List<Tuple<MapLocation, Integer>> goldLocationsInView = getGoldLocationsInView(rc, stimulus.allLocationsWithinRadiusSquared);
-//        if (goldLocationsInView.size() > 0) {
-//            // TODO decide location to go to as a function of gold quantity, instead of just distance
-//            MapLocation closestGoldLocation = getClosestResourceLocation(stimulus.myLocation, goldLocationsInView);
-//
-//            communicator.sendMessage(rc, Message.buildSimpleLocationMessage(MessageType.GOLD_LOCATION, closestGoldLocation, Entity.ALL_MINERS));
-//
-//            // gold is close enough to mine
-//            if (stimulus.myLocation.distanceSquaredTo(closestGoldLocation) < ROBOT_TYPE.actionRadiusSquared) {
-//                if (rc.canMineGold(closestGoldLocation)) {
-//                    rc.mineGold(closestGoldLocation);
-//                }
-//            } else { // gold is not close enough to mine, so get closer
-//                Optional<Direction> direction = pathFinder.findPath(stimulus.myLocation, closestGoldLocation, rc);
-//                if (direction.isPresent() && rc.canMove(direction.get())) {
-//                    rc.move(direction.get());
-//                }
-//            }
-//
-//            return;
-//        }
+        // collect gold, if any
+        List<Tuple<MapLocation, Integer>> goldLocationsInView = getGoldLocationsInView(rc);
+        if (goldLocationsInView.size() > 0) {
+            // TODO decide location to go to as a function of gold quantity, instead of just distance
+            MapLocation closestGoldLocation = getClosestResourceLocation(stimulus.myLocation, goldLocationsInView);
+
+            communicator.sendMessage(rc, Message.buildSimpleLocationMessage(MessageType.GOLD_LOCATION, closestGoldLocation, Entity.ALL_MINERS));
+
+            // gold is close enough to mine
+            if (stimulus.myLocation.distanceSquaredTo(closestGoldLocation) < ROBOT_TYPE.actionRadiusSquared) {
+                if (rc.canMineGold(closestGoldLocation)) {
+                    rc.mineGold(closestGoldLocation);
+                }
+            } else { // gold is not close enough to mine, so get closer
+                Optional<Direction> direction = pathFinder.findPath(stimulus.myLocation, closestGoldLocation, rc);
+                if (direction.isPresent() && rc.canMove(direction.get())) {
+                    rc.move(direction.get());
+                }
+            }
+
+            return;
+        }
 
         // collect lead, if any
-        List<Tuple<MapLocation, Integer>> leadLocationsInView = getLeadLocationsInView(rc, stimulus.allLocationsWithinRadiusSquared);
+        List<Tuple<MapLocation, Integer>> leadLocationsInView = getLeadLocationsInView(rc);
         if (leadLocationsInView.size() > 0) {
             // TODO decide location to go to as a function of lead quantity, instead of just distance
             MapLocation closestLeadLocation = getClosestResourceLocation(stimulus.myLocation, leadLocationsInView);
@@ -186,16 +181,12 @@ public class Miner {
         tryMove(rc, direction.get());
     }
 
-    public static boolean isAnyResourceInView(RobotController rc, MapLocation[] allLocationsWithinRadiusSquared) throws GameActionException {
-        // TODO re-enable gold collection when either we have more information to know exactly where the gold is, or when
-        //  bytecode usage is not an issue
-//        List<Tuple<MapLocation, Integer>> localGoldLocations = getGoldLocationsInView(rc, allLocationsWithinRadiusSquared);
-//        if (localGoldLocations.size() > 0) {
-//            return true;
-//        }
+    public static boolean isAnyResourceInView(RobotController rc, MapLocation[] nearbyLocationsWithGold, MapLocation[] nearbyLocationsWithLead) throws GameActionException {
+        if (nearbyLocationsWithGold.length > 0) {
+            return true;
+        }
 
-        List<Tuple<MapLocation, Integer>> localLeadLocations = getLeadLocationsInView(rc, allLocationsWithinRadiusSquared);
-        if (localLeadLocations.size() > 0) {
+        if (nearbyLocationsWithLead.length > 0) {
             return true;
         }
 
@@ -247,29 +238,21 @@ public class Miner {
         return Optional.empty();
     }
 
-    public static List<Tuple<MapLocation, Integer>> getLeadLocationsInView(RobotController rc, MapLocation[] allLocationsWithinRadiusSquared) throws GameActionException {
-        int age = getAge(rc);
-
-        if (age == localLeadLocationsValidityAge) {
-            return localLeadLocations;
+    public static List<Tuple<MapLocation, Integer>> getLeadLocationsInView(RobotController rc) throws GameActionException {
+        List<Tuple<MapLocation, Integer>> leadLocationsInView = new LinkedList<>();
+        for (MapLocation mapLocation: Miner.nearbyLocationsWithLead) {
+            leadLocationsInView.add(Tuple.of(mapLocation, rc.senseLead(mapLocation)));
         }
 
-        List<Tuple<MapLocation, Integer>> leadLocationsInView = getLeadLocations(rc, allLocationsWithinRadiusSquared);
-        localLeadLocations = leadLocationsInView;
-        localLeadLocationsValidityAge = age;
         return leadLocationsInView;
     }
 
-    public static List<Tuple<MapLocation, Integer>> getGoldLocationsInView(RobotController rc, MapLocation[] allLocationsWithinRadiusSquared) throws GameActionException {
-        int age = getAge(rc);
-
-        if (age == localGoldLocationsValidityAge) {
-            return localGoldLocations;
+    public static List<Tuple<MapLocation, Integer>> getGoldLocationsInView(RobotController rc) throws GameActionException {
+        List<Tuple<MapLocation, Integer>> goldLocationsInView = new LinkedList<>();
+        for (MapLocation mapLocation: Miner.nearbyLocationsWithGold) {
+            goldLocationsInView.add(Tuple.of(mapLocation, rc.senseLead(mapLocation)));
         }
 
-        List<Tuple<MapLocation, Integer>> goldLocationsInView = getGoldLocations(rc, allLocationsWithinRadiusSquared);
-        localGoldLocations = goldLocationsInView;
-        localGoldLocationsValidityAge = age;
         return goldLocationsInView;
     }
 

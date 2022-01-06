@@ -17,7 +17,9 @@ import kolohe.robots.watchtower.Watchtower;
 public strictfp class RobotPlayer {
     public static int MAP_WIDTH;
     public static int MAP_HEIGHT;
-    public static RobotType ROBOT_TYPE;
+    public static Team MY_TEAM;
+    public static Team OPP_TEAM;
+    public static RobotType ROBOT_TYPE; // this robot's type
     public static int BIRTH_YEAR; // the round number this robot was born
 
     /**
@@ -34,6 +36,8 @@ public strictfp class RobotPlayer {
 
         MAP_WIDTH = rc.getMapWidth();
         MAP_HEIGHT = rc.getMapHeight();
+        MY_TEAM = rc.getTeam();
+        OPP_TEAM = rc.getTeam().opponent();
         ROBOT_TYPE = rc.getType();
         BIRTH_YEAR = rc.getRoundNum();
 
