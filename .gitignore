@@ -27,3 +27,6 @@ gradle
 .idea
 .gradle
 client
+
+gradlew
+version.txt

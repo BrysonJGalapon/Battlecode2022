@@ -1,6 +1,9 @@
-package kolohe.communication.basic;
-
+package kolohe.communication.bettercommunication;
 import battlecode.common.*;
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
+import battlecode.common.RobotType;
 import kolohe.communication.Communicator;
 import kolohe.communication.Entity;
 import kolohe.communication.Message;
@@ -22,7 +25,7 @@ import static kolohe.utils.Utils.RNG;
         - Can't send more than 9 bits of data
         - Can't tell which message was sent before/after (no timestamp information is stored in message)
 */
-public class BasicCommunicator implements Communicator {
+public class BetterCommunicator implements Communicator {
     private static final int SHARED_ARRAY_LENGTH = 64; // change to 32 and pair possibly?
     // 64/7 entities
     // var length encoding
@@ -249,3 +252,4 @@ public class BasicCommunicator implements Communicator {
         return Optional.of(new MapLocation(x, y));
     }
 }
+

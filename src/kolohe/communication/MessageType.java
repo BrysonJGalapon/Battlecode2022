@@ -4,9 +4,22 @@ import java.util.Optional;
 
 // TODO dayne
 public enum MessageType {
-    GOLD_LOCATION(1),
+    GOLD_LOCATION(1), // miner
     LEAD_LOCATION(2),
     NO_RESOURCES_LOCATION(3),
+    GOLD_RECLAIM_LOCATION(4),
+    LEAD_DEPOSIT_LOCATION(5),
+    BUILDABLE_LOCAITON(6), // builder
+    REPAIR_REQUIRED_LOCATION(7),
+    ENEMY_DROID_LOCATION(8), // solider
+    NO_DROID_LOCATION(9),
+    ENEMY_ARCHON_LOCATION(10), // possibly have another type or addition to encoding abt level/health
+    ENEMY_LABORATORY_LOCATION(11),
+    ENEMY_WATCHTOWER_LOCATION(12),
+    ALLY_LABORATORY_LOCATION(13), // ally types
+
+
+
     // ....
 
     ;
