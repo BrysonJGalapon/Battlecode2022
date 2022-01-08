@@ -14,6 +14,7 @@ import kolohe.state.machine.Stimulus;
 import java.util.List;
 import java.util.Optional;
 
+import static battlecode.common.RobotMode.PROTOTYPE;
 import static kolohe.RobotPlayer.*;
 import static kolohe.utils.Parameters.BUILDER_RECEIVE_MESSAGE_BYTECODE_LIMIT;
 import static kolohe.utils.Parameters.BUILDER_RECEIVE_MESSAGE_LIMIT;
@@ -34,6 +35,7 @@ public class Builder {
 
     // state
     public static MapLocation buildLocation; // the location to build the next building
+    public static RobotType robotToBuild; // the type of building to build (laboratory or watchtower)
     private static MapLocation primaryArchonLocation; // the location of the archon that this builder is following
 
     public static double leadBudget = 0;
@@ -123,28 +125,52 @@ public class Builder {
 
         rc.setIndicatorLine(stimulus.myLocation, buildLocation, 0, 0, 255);
 
+        // if the build location is too far away to sense, get closer
+        if (!rc.canSenseLocation(buildLocation)) {
+            Optional<Direction> direction = pathFinder.findPath(stimulus.myLocation, buildLocation, rc);
+            if (direction.isPresent() && rc.canMove(direction.get())) {
+                rc.move(direction.get());
+            }
+            return;
+        }
+
+        // don't clog up the build location
         if (stimulus.myLocation.equals(buildLocation)) {
             tryMoveRandomDirection(rc);
         }
 
-        RobotType buildingRobotType = RobotType.WATCHTOWER;
-        // TODO store and extract building type in state (to support laboratory builds) in state
-        // building is close enough to build
-        if (stimulus.myLocation.distanceSquaredTo(buildLocation) < ROBOT_TYPE.actionRadiusSquared) {
-            // wait until have enough resources to build the building
+        // check if the robot we are attempting to build has already been built and is in PROTOTYPE mode
+        RobotInfo robotAtBuildLocation = rc.senseRobotAtLocation(buildLocation);
+        if (robotAtBuildLocation != null && robotAtBuildLocation.getType().equals(Builder.robotToBuild) && robotAtBuildLocation.getMode().equals(PROTOTYPE)) {
+            // robot is close enough to repair
+            if (stimulus.myLocation.distanceSquaredTo(buildLocation) <= ROBOT_TYPE.actionRadiusSquared) {
+                if (rc.canRepair(buildLocation)) {
+                    rc.repair(buildLocation);
+                }
+            } else { // robot is not close enough to repair, so get closer
+                Optional<Direction> direction = pathFinder.findPath(stimulus.myLocation, buildLocation, rc);
+                if (direction.isPresent() && rc.canMove(direction.get())) {
+                    rc.move(direction.get());
+                }
+            }
+        }
+
+        // robot is close enough to build
+        if (stimulus.myLocation.isAdjacentTo(buildLocation)) {
+            // wait until have enough resources to build the robot
             resourceAllocation.run(rc, stimulus);
             double leadAllowance = resourceAllocation.getLeadAllowance(rc, ROBOT_TYPE);
             leadBudget += leadAllowance;
-            if (buildingRobotType.buildCostLead > leadBudget) {
+            if (robotToBuild.buildCostLead > leadBudget) {
                 return;
             }
 
-            // build the building
-            if (rc.canBuildRobot(buildingRobotType, stimulus.myLocation.directionTo(buildLocation))) {
-                leadBudget -= buildingRobotType.buildCostLead;
-                rc.buildRobot(buildingRobotType, stimulus.myLocation.directionTo(buildLocation));
+            // build the robot
+            if (rc.canBuildRobot(robotToBuild, stimulus.myLocation.directionTo(buildLocation))) {
+                leadBudget -= robotToBuild.buildCostLead;
+                rc.buildRobot(robotToBuild, stimulus.myLocation.directionTo(buildLocation));
             }
-        } else { // building is close enough to build, so get closer
+        } else { // robot is not close enough to build, so get closer
             Optional<Direction> direction = pathFinder.findPath(stimulus.myLocation, buildLocation, rc);
             if (direction.isPresent() && rc.canMove(direction.get())) {
                 rc.move(direction.get());
@@ -153,7 +179,7 @@ public class Builder {
     }
 
     public static void runRepairActions(RobotController rc, Stimulus stimulus) throws GameActionException {
-        // TODO
+        tryMoveRandomDirection(rc);
     }
 
     public static Optional<MapLocation> getAnyBroadcastedBuildingLocation(List<Message> messages) {

@@ -21,33 +21,43 @@ public class Parameters {
     // The distribution is represented by [Miner, Builder, Sage, Soldier]
     public static final int[] ARCHON_RESOURCE_COLLECTION_BUILD_DISTRIBUTION = new int[]{3, 1, 0, 1};
     public static final int[] ARCHON_DEFEND_BUILD_DISTRIBUTION = new int[]{1, 1, 0, 3};
-    public static final int[] ARCHON_ATTACK_BUILD_DISTRIBUTION = new int[]{0, 0, 1, 3};
-    public static final int[] ARCHON_SURVIVE_BUILD_DISTRIBUTION = new int[]{0, 1, 1, 3};
+//    public static final int[] ARCHON_ATTACK_BUILD_DISTRIBUTION = new int[]{0, 0, 1, 3};
+    // TODO re-enable building sage once we start building laboratories
+    public static final int[] ARCHON_ATTACK_BUILD_DISTRIBUTION = new int[]{1, 1, 0, 6};
+//    public static final int[] ARCHON_SURVIVE_BUILD_DISTRIBUTION = new int[]{0, 1, 1, 3};
+// TODO re-enable building sage once we start building laboratories
+    public static final int[] ARCHON_SURVIVE_BUILD_DISTRIBUTION = new int[]{0, 1, 0, 4};
 
-     // Distribution of lead and gold allocation limits per ResourceAllocation state.
-     // The distribution is represented by [Archon, Builder, Laboratory]
-     // TODO once resource allocation state is defined, create distributions
-     public static final int[] RESOURCE_ALLOCATION_RESOURCE_COLLECTION_LEAD_DISTIBUTION = new int[]{80, 20, 0};
-     public static final int[] RESOURCE_ALLOCATION_DEFEND_LEAD_DISTIBUTION = new int[]{20, 70, 10};
-     public static final int[] RESOURCE_ALLOCATION_ATTACK_LEAD_DISTIBUTION = new int[]{50, 40, 10};
-     public static final int[] RESOURCE_ALLOCATION_SURVIVE_LEAD_DISTIBUTION = new int[]{100, 0, 0};
+    // Distribution of lead and gold allocation limits per ResourceAllocation state.
+    // The distribution is represented by [Archon, Builder, Laboratory]
+    // TODO once resource allocation state is defined, create distributions
+    public static final int[] RESOURCE_ALLOCATION_RESOURCE_COLLECTION_LEAD_DISTIBUTION = new int[]{80, 20, 0};
+    public static final int[] RESOURCE_ALLOCATION_DEFEND_LEAD_DISTIBUTION = new int[]{20, 70, 10};
+    public static final int[] RESOURCE_ALLOCATION_ATTACK_LEAD_DISTIBUTION = new int[]{85, 5, 10};
+    public static final int[] RESOURCE_ALLOCATION_SURVIVE_LEAD_DISTIBUTION = new int[]{100, 0, 0};
 
-     public static final int[] RESOURCE_ALLOCATION_RESOURCE_COLLECTION_GOLD_DISTIBUTION = new int[]{20, 40, 40};
-     public static final int[] RESOURCE_ALLOCATION_DEFEND_GOLD_DISTIBUTION = new int[]{20, 40, 40};
-     public static final int[] RESOURCE_ALLOCATION_ATTACK_GOLD_DISTIBUTION = new int[]{20, 40, 40};
-     public static final int[] RESOURCE_ALLOCATION_SURVIVE_GOLD_DISTIBUTION = new int[]{20, 40, 40};
+    public static final int[] RESOURCE_ALLOCATION_RESOURCE_COLLECTION_GOLD_DISTIBUTION = new int[]{20, 40, 40};
+    public static final int[] RESOURCE_ALLOCATION_DEFEND_GOLD_DISTIBUTION = new int[]{20, 40, 40};
+    public static final int[] RESOURCE_ALLOCATION_ATTACK_GOLD_DISTIBUTION = new int[]{20, 40, 40};
+    public static final int[] RESOURCE_ALLOCATION_SURVIVE_GOLD_DISTIBUTION = new int[]{20, 40, 40};
 
-     // Makes resource-utilization entities more aggressive in using resources
-     public static final double RESOURCE_ALLOCATION_RESOURCE_OVERLAP_FACTOR = 1.2;
+    // Makes resource-utilization entities more aggressive in using resources
+    public static final double RESOURCE_ALLOCATION_RESOURCE_OVERLAP_FACTOR = 1.2;
 
-     // Thresholds that govern Archon state transitions
-     public static int ARCHON_RESOURCE_COLLECTION_TO_DEFEND_ROBOT_COUNT_THRESHOLD = 15;
-     public static int ARCHON_DEFEND_TO_RESOURCE_COLLECTION_ROBOT_COUNT_THRESHOLD = 7;
-     public static int ARCHON_DEFEND_TO_ATTACK_ROBOT_COUNT_THRESHOLD = 20;
-     public static int ARCHON_ATTACK_TO_DEFEND_ROBOT_COUNT_THRESHOLD = 10;
-     public static int ARCHON_ANY_TO_SURVIVE_ROBOT_COUNT_THRESHOLD = 6;
-     public static int ARCHON_SURVIVE_TO_DEFEND_ROBOT_COUNT_THRESHOLD = 15;
 
-     // number of rounds that must pass before survival state is reached
-     public static int ARCHON_SURVIVE_GRACE_PERIOD = 200;
+    // Thresholds that govern Archon state transitions
+    // invariants:
+    //      - ARCHON_RESOURCE_COLLECTION_TO_DEFEND_ROBOT_COUNT_THRESHOLD > ARCHON_DEFEND_TO_RESOURCE_COLLECTION_ROBOT_COUNT_THRESHOLD
+    //      - ARCHON_DEFEND_TO_ATTACK_ROBOT_COUNT_THRESHOLD > ARCHON_DEFEND_TO_ATTACK_ROBOT_COUNT_THRESHOLD
+    //      - ARCHON_SURVIVE_TO_DEFEND_ROBOT_COUNT_THRESHOLD  == ARCHON_RESOURCE_COLLECTION_TO_DEFEND_ROBOT_COUNT_THRESHOLD
+    //      - ARCHON_ANY_TO_SURVIVE_ROBOT_COUNT_THRESHOLD is the smallest
+    public static int ARCHON_RESOURCE_COLLECTION_TO_DEFEND_ROBOT_COUNT_THRESHOLD = 15;
+    public static int ARCHON_DEFEND_TO_RESOURCE_COLLECTION_ROBOT_COUNT_THRESHOLD = 7;
+    public static int ARCHON_DEFEND_TO_ATTACK_ROBOT_COUNT_THRESHOLD = 25;
+    public static int ARCHON_ATTACK_TO_DEFEND_ROBOT_COUNT_THRESHOLD = 10;
+    public static int ARCHON_ANY_TO_SURVIVE_ROBOT_COUNT_THRESHOLD = 6;
+    public static int ARCHON_SURVIVE_TO_DEFEND_ROBOT_COUNT_THRESHOLD = 15;
+
+    // number of rounds that must pass before survival state is reached
+    public static int ARCHON_SURVIVE_GRACE_PERIOD = 200;
 }

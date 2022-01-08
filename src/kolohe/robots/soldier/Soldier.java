@@ -56,14 +56,14 @@ public class Soldier {
         }
     }
 
-    private static MapLocation chooseEnemyToAttack(RobotInfo[] enemyNearbyRobotsInfo) {
+    private static RobotInfo chooseEnemyToAttack(RobotInfo[] enemyNearbyRobotsInfo) {
         // TODO improve decision-making on which enemy to attack
-        return enemyNearbyRobotsInfo[0].location;
+        return enemyNearbyRobotsInfo[0];
     }
 
-    public static void runAttackActions(RobotController rc, Stimulus chooseEnemyToAttack) throws GameActionException {
+    public static void runAttackActions(RobotController rc, Stimulus stimulus) throws GameActionException {
         // attack an enemy
-        MapLocation attackLocation = chooseEnemyToAttack(chooseEnemyToAttack.enemyNearbyRobotsInfo);
+        MapLocation attackLocation = chooseEnemyToAttack(stimulus.enemyNearbyRobotsInfo).location;
         if (rc.canAttack(attackLocation)) {
             rc.attack(attackLocation);
         }

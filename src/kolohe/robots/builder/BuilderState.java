@@ -1,12 +1,14 @@
 package kolohe.robots.builder;
 
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
+import battlecode.common.*;
 import kolohe.state.machine.State;
 import kolohe.state.machine.Stimulus;
 
 import java.util.Optional;
+
+import static battlecode.common.RobotMode.PROTOTYPE;
+import static kolohe.RobotPlayer.ROBOT_ID;
+import static kolohe.RobotPlayer.TEST_ROBOT_ID;
 
 public enum BuilderState implements State {
     START, // initial state
@@ -14,6 +16,8 @@ public enum BuilderState implements State {
     BUILD, // in the process of building a building
 
     REPAIR, // find buildings to repair
+
+    MUTATE, // mutate buildings
     ;
 
     @Override
@@ -22,18 +26,34 @@ public enum BuilderState implements State {
 
         switch (this) {
             case START:
-                // TODO fix this check
-//                // check if any buildings need to be created
-//                if (broadcastedBuildingLocation.isPresent()) {
-//                    Builder.buildLocation = broadcastedBuildingLocation.get();
-//                    return BUILD;
-//                }
-//
-//                return REPAIR;
-                Builder.buildLocation = stimulus.myLocation.translate(3, 3);
-                return BUILD;
+                // check if any buildings need to be created
+                if (broadcastedBuildingLocation.isPresent()) {
+                    Builder.buildLocation = broadcastedBuildingLocation.get();
+                    Builder.robotToBuild = RobotType.WATCHTOWER; // TODO get this information from broadcasted building location message
+                    return BUILD;
+                }
 
+                return REPAIR;
             case BUILD:
+                // not close enough to build location
+                if (!rc.canSenseLocation(Builder.buildLocation)) {
+                    return BUILD;
+                }
+
+                // check if the desired building has already been built at the location and is functioning
+                RobotInfo robotAtBuildLocation = rc.senseRobotAtLocation(Builder.buildLocation);
+                if (robotAtBuildLocation != null && robotAtBuildLocation.getType().equals(Builder.robotToBuild) && !robotAtBuildLocation.getMode().equals(PROTOTYPE)) {
+                    // building has already been built, check if any other build locations are being broadcasted
+                    if (broadcastedBuildingLocation.isPresent() && !broadcastedBuildingLocation.get().equals(Builder.buildLocation)) {
+                        Builder.buildLocation = broadcastedBuildingLocation.get();
+                        Builder.robotToBuild = RobotType.WATCHTOWER; // TODO get this information from broadcasted building location message
+                        return BUILD;
+                    } else {
+                        // no other build locations are being broadcasted
+                        return REPAIR;
+                    }
+                }
+
                 // TODO transition to repair state if no new buildings need to be created, otherwise stay in build state
                 //  but modify some Builder state to build in a new location
                 return BUILD;
@@ -42,6 +62,7 @@ public enum BuilderState implements State {
                 // check if any buildings need to be created
                 if (broadcastedBuildingLocation.isPresent()) {
                     Builder.buildLocation = broadcastedBuildingLocation.get();
+                    Builder.robotToBuild = RobotType.WATCHTOWER;
                     return BUILD;
                 }
 

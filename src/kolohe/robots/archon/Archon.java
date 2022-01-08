@@ -101,13 +101,49 @@ public class Archon {
             throw new RuntimeException("Should not be here");
         }
 
-        // TODO after done testing, setup configuration of walltowers and implement it here
-        MapLocation newWatchTowerLocation = rc.getLocation().translate(4, 4);
+        tryBuildRobot(stimulus, rc);
+    }
 
-        // check if a watchTower is already there, and if not then tell builders to build there
-        RobotInfo robot = rc.senseRobotAtLocation(newWatchTowerLocation);
-        if (robot == null || robot.getTeam().equals(OPP_TEAM) || !robot.getType().equals(RobotType.WATCHTOWER)) {
-            communicator.sendMessage(rc, Message.buildSimpleLocationMessage(BUILD_WATCHTOWER_LOCATION, newWatchTowerLocation, ALL_BUILDERS));
+    private static MapLocation[] getWatchtowerFormation(MapLocation src) {
+        return new MapLocation[]{
+                src.translate(3, 3),
+                src.translate(3, -3),
+                src.translate(-3, 3),
+                src.translate(-3, -3)
+        };
+    }
+
+    public static void runDefendActions(RobotController rc, Stimulus stimulus) throws GameActionException {
+        if (buildDistribution == null) {
+            throw new RuntimeException("Should not be here");
+        }
+
+        // broadcast need to build watchtowers
+        for (MapLocation watchtowerLocation : getWatchtowerFormation(rc.getLocation())) {
+            if (rc.onTheMap(watchtowerLocation)) {
+                // check if a watchTower is already there, and if not then tell builders to build there
+                RobotInfo robot = rc.senseRobotAtLocation(watchtowerLocation);
+                if (robot == null || robot.getTeam().equals(OPP_TEAM) || !robot.getType().equals(RobotType.WATCHTOWER)) {
+                    communicator.sendMessage(rc, Message.buildSimpleLocationMessage(BUILD_WATCHTOWER_LOCATION, watchtowerLocation, ALL_BUILDERS));
+                    break;
+                }
+            }
+        }
+
+        tryBuildRobot(stimulus, rc);
+    }
+
+    public static void runAttackActions(RobotController rc, Stimulus stimulus) throws GameActionException {
+        if (buildDistribution == null) {
+            throw new RuntimeException("Should not be here");
+        }
+
+        tryBuildRobot(stimulus, rc);
+    }
+
+    public static void runSurviveActions(RobotController rc, Stimulus stimulus) throws GameActionException {
+        if (buildDistribution == null) {
+            throw new RuntimeException("Should not be here");
         }
 
         // figure out which robot to build
@@ -115,23 +151,27 @@ public class Archon {
             robotToBuild = sampleBuildDistribution(buildDistribution);
         }
 
-        if (ROBOT_ID == TEST_ROBOT_ID) {
-            System.out.println("I want to build: " + robotToBuild);
-            System.out.println("My lead budget is: " + leadBudget);
+        tryBuildRobot(stimulus, rc);
+    }
+
+    private static void tryBuildRobot(Stimulus stimulus, RobotController rc) throws GameActionException {
+        // figure out which robot to build
+        if (robotToBuild == null) {
+            robotToBuild = sampleBuildDistribution(buildDistribution);
         }
+
+        if (ROBOT_ID == TEST_ROBOT_ID) {
+            System.out.println(String.format("I would like to build: %s", robotToBuild));
+            System.out.println(String.format("My lead budget is : %s", leadBudget));
+            System.out.println(String.format("Total lead : %s", rc.getTeamLeadAmount(MY_TEAM)));
+        }
+
         if (isAffordable(rc, stimulus, robotToBuild)) {
-            if (ROBOT_ID == TEST_ROBOT_ID) {
-                System.out.println("...I can afford it!");
-            }
             Optional<Direction> direction = tryBuildRandomDirection(robotToBuild, rc);
             if (direction.isPresent()) {
                 // successfully built the robot, deduct from budget and setup re-sampling
                 deductBudget(robotToBuild);
                 robotToBuild = null;
-            }
-        } else {
-            if (ROBOT_ID == TEST_ROBOT_ID) {
-                System.out.println("...I can't afford it");
             }
         }
     }
@@ -144,7 +184,6 @@ public class Archon {
             case BUILDER:
             case SOLDIER:
                 double leadAllowance = resourceAllocation.getLeadAllowance(rc, ROBOT_TYPE);
-                System.out.println("My lead allowance for this turn as a " + ROBOT_TYPE + " is: " + leadAllowance);
                 leadBudget += leadAllowance;
                 return robotType.buildCostLead <= leadBudget;
             case SAGE:
@@ -167,33 +206,6 @@ public class Archon {
                 break;
             default: throw new RuntimeException("Should not be here");
         }
-    }
-
-    public static void runDefendActions(RobotController rc, Stimulus stimulus) throws GameActionException {
-        if (buildDistribution == null) {
-            throw new RuntimeException("Should not be here");
-        }
-
-        RobotType robotType = sampleBuildDistribution(buildDistribution);
-        tryBuildRandomDirection(robotType, rc);
-    }
-
-    public static void runAttackActions(RobotController rc, Stimulus stimulus) throws GameActionException {
-        if (buildDistribution == null) {
-            throw new RuntimeException("Should not be here");
-        }
-
-        RobotType robotType = sampleBuildDistribution(buildDistribution);
-        tryBuildRandomDirection(robotType, rc);
-    }
-
-    public static void runSurviveActions(RobotController rc, Stimulus stimulus) throws GameActionException {
-        if (buildDistribution == null) {
-            throw new RuntimeException("Should not be here");
-        }
-
-        RobotType robotType = sampleBuildDistribution(buildDistribution);
-        tryBuildRandomDirection(robotType, rc);
     }
 
     private static RobotType sampleBuildDistribution(int[] buildDistribution) {
