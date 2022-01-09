@@ -88,10 +88,6 @@ public strictfp class RobotPlayer {
                 totalLeadLastTurn = totalLeadThisTurn;
                 totalGoldLastTurn = totalGoldThisTurn;
             } catch (GameActionException e) {
-//                if (ROBOT_ID == TEST_ROBOT_ID) {
-//                    System.out.println(rc.getType() + " Exception");
-//                    e.printStackTrace();
-//                }
                 // Oh no! It looks like we did something illegal in the Battlecode world. You should
                 // handle GameActionExceptions judiciously, in case unexpected events occur in the game
                 // world. Remember, uncaught exceptions cause your robot to explode!

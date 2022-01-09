@@ -3,6 +3,7 @@ package kolohe.robots.builder;
 import battlecode.common.*;
 import kolohe.state.machine.State;
 import kolohe.state.machine.Stimulus;
+import kolohe.utils.Tuple;
 
 import java.util.Optional;
 
@@ -22,14 +23,14 @@ public enum BuilderState implements State {
 
     @Override
     public State react(Stimulus stimulus, RobotController rc) throws GameActionException {
-        Optional<MapLocation> broadcastedBuildingLocation = Builder.getAnyBroadcastedBuildingLocation(stimulus.messages);
+        Optional<Tuple<RobotType, MapLocation>> broadcastedBuildingLocation = Builder.getAnyBroadcastedBuildingLocation(stimulus.messages);
 
         switch (this) {
             case START:
                 // check if any buildings need to be created
                 if (broadcastedBuildingLocation.isPresent()) {
-                    Builder.buildLocation = broadcastedBuildingLocation.get();
-                    Builder.robotToBuild = RobotType.WATCHTOWER; // TODO get this information from broadcasted building location message
+                    Builder.robotToBuild = broadcastedBuildingLocation.get().getX();
+                    Builder.buildLocation = broadcastedBuildingLocation.get().getY();
                     return BUILD;
                 }
 
@@ -44,9 +45,9 @@ public enum BuilderState implements State {
                 RobotInfo robotAtBuildLocation = rc.senseRobotAtLocation(Builder.buildLocation);
                 if (robotAtBuildLocation != null && robotAtBuildLocation.getType().equals(Builder.robotToBuild) && !robotAtBuildLocation.getMode().equals(PROTOTYPE)) {
                     // building has already been built, check if any other build locations are being broadcasted
-                    if (broadcastedBuildingLocation.isPresent() && !broadcastedBuildingLocation.get().equals(Builder.buildLocation)) {
-                        Builder.buildLocation = broadcastedBuildingLocation.get();
-                        Builder.robotToBuild = RobotType.WATCHTOWER; // TODO get this information from broadcasted building location message
+                    if (broadcastedBuildingLocation.isPresent() && !broadcastedBuildingLocation.get().getY().equals(Builder.buildLocation)) {
+                        Builder.robotToBuild = broadcastedBuildingLocation.get().getX();
+                        Builder.buildLocation = broadcastedBuildingLocation.get().getY();
                         return BUILD;
                     } else {
                         // no other build locations are being broadcasted
@@ -61,8 +62,8 @@ public enum BuilderState implements State {
             case REPAIR:
                 // check if any buildings need to be created
                 if (broadcastedBuildingLocation.isPresent()) {
-                    Builder.buildLocation = broadcastedBuildingLocation.get();
-                    Builder.robotToBuild = RobotType.WATCHTOWER;
+                    Builder.robotToBuild = broadcastedBuildingLocation.get().getX();
+                    Builder.buildLocation = broadcastedBuildingLocation.get().getY();
                     return BUILD;
                 }
 

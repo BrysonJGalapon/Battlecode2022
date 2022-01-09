@@ -14,8 +14,7 @@ import java.util.Optional;
 import static kolohe.RobotPlayer.*;
 import static kolohe.communication.Entity.ALL_BUILDERS;
 import static kolohe.communication.Entity.ALL_ROBOTS;
-import static kolohe.communication.MessageType.ARCHON_STATE;
-import static kolohe.communication.MessageType.BUILD_WATCHTOWER_LOCATION;
+import static kolohe.communication.MessageType.*;
 import static kolohe.utils.Utils.*;
 
 /*
@@ -111,12 +110,16 @@ public class Archon {
         };
     }
 
-    public static void runDefendActions(RobotController rc, Stimulus stimulus) throws GameActionException {
-        if (buildDistribution == null) {
-            throw new RuntimeException("Should not be here");
-        }
+    private static MapLocation[] getLaboratoryFormation(MapLocation src) {
+        return new MapLocation[]{
+                src.translate(0, 4),
+                src.translate(0, -4),
+                src.translate(4, 0),
+                src.translate(-4, 0)
+        };
+    }
 
-        // broadcast need to build watchtowers
+    private static boolean broadcastBuildWatchtowerMessage(RobotController rc) throws GameActionException {
         for (MapLocation watchtowerLocation : getWatchtowerFormation(rc.getLocation())) {
             if (rc.onTheMap(watchtowerLocation)) {
                 // check if a watchTower is already there, and if not then tell builders to build there
@@ -124,8 +127,57 @@ public class Archon {
                 if (robot == null || robot.getTeam().equals(OPP_TEAM) || !robot.getType().equals(RobotType.WATCHTOWER)) {
                     communicator.sendMessage(rc, Message.buildSimpleLocationMessage(
                             BUILD_WATCHTOWER_LOCATION, watchtowerLocation, ALL_BUILDERS));
+                    return false;
                 }
             }
+        }
+
+        return true;
+    }
+
+    private static boolean broadcastBuildLaboratoryMessage(RobotController rc) throws GameActionException {
+        for (MapLocation laboratoryLocation : getLaboratoryFormation(rc.getLocation())) {
+            if (rc.onTheMap(laboratoryLocation)) {
+                // check if a laboratory is already there, and if not then tell builders to build there
+                RobotInfo robot = rc.senseRobotAtLocation(laboratoryLocation);
+                if (robot == null || robot.getTeam().equals(OPP_TEAM) || !robot.getType().equals(RobotType.LABORATORY)) {
+                    rc.setIndicatorLine(rc.getLocation(), laboratoryLocation, 0, 255, 0);
+                    communicator.sendMessage(rc, Message.buildSimpleLocationMessage(
+                            BUILD_LABORATORY_LOCATION, laboratoryLocation, ALL_BUILDERS));
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public static int getNumberOfSurroundingLaboratories(RobotController rc) throws GameActionException {
+        int count = 0;
+        for (MapLocation laboratoryLocation : getLaboratoryFormation(rc.getLocation())) {
+            if (rc.onTheMap(laboratoryLocation)) {
+                // check if a laboratory is already there, and if not then tell builders to build there
+                RobotInfo robot = rc.senseRobotAtLocation(laboratoryLocation);
+                if (robot != null && robot.getTeam().equals(MY_TEAM) && robot.getType().equals(RobotType.LABORATORY)) {
+                    count += 1;
+                }
+            }
+        }
+
+        return count;
+    }
+
+    public static void runDefendActions(RobotController rc, Stimulus stimulus) throws GameActionException {
+        if (buildDistribution == null) {
+            throw new RuntimeException("Should not be here");
+        }
+
+        // broadcast need to build watchtowers
+        boolean done = broadcastBuildWatchtowerMessage(rc);
+
+        // if we are done building watchtowers, broadcast need to build laboratories
+        if (done) {
+            broadcastBuildLaboratoryMessage(rc);
         }
 
         tryBuildRobot(stimulus, rc);

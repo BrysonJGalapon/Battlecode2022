@@ -102,9 +102,6 @@ public class AdvancedCommunicator implements Communicator {
         }
 
         for (int i = 0; i < channels.length; i++) {
-            if (ROBOT_ID == TEST_ROBOT_ID) {
-                System.out.println(String.format("bytecodes left: " + Clock.getBytecodesLeft()));
-            }
             if (initialBytecodesLeft-Clock.getBytecodesLeft() > bytecodeLimit) {
                 break;
             }
@@ -155,6 +152,7 @@ public class AdvancedCommunicator implements Communicator {
             case LEAD_LOCATION:
             case NO_RESOURCES_LOCATION:
             case BUILD_WATCHTOWER_LOCATION:
+            case BUILD_LABORATORY_LOCATION:
                 encoding = append(encoding, encodeMapLocation(message.location), MAP_LOCATION_BIT_LENGTH);
                 break;
             default: throw new RuntimeException("Should not be here");

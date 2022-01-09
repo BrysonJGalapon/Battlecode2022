@@ -3,7 +3,6 @@ package kolohe.communication;
 import battlecode.common.MapLocation;
 import kolohe.robots.archon.ArchonState;
 
-// TODO dayne
 public class Message {
     // required fields
     public final MessageType messageType;

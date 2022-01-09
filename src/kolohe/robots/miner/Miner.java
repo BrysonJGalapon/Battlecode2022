@@ -68,19 +68,19 @@ public class Miner {
             return; // lots of bytecode is used to initialize the advanced communicator, so don't do anything on this turn
         }
 
-        if (ROBOT_ID == TEST_ROBOT_ID) {
-            System.out.println(String.format("%s, %s: start run", rc.getRoundNum(), Clock.getBytecodesLeft()));
-        }
+//        if (ROBOT_ID == TEST_ROBOT_ID) {
+//            System.out.println(String.format("%s, %s: start run", rc.getRoundNum(), Clock.getBytecodesLeft()));
+//        }
         Stimulus stimulus = collectStimulus(rc);
-        if (ROBOT_ID == TEST_ROBOT_ID) {
-            System.out.println(String.format("%s, %s: after stimulus", rc.getRoundNum(), Clock.getBytecodesLeft()));
-            System.out.println(String.format("I'm in state: %s", stateMachine.getCurrState()));
-        }
+//        if (ROBOT_ID == TEST_ROBOT_ID) {
+//            System.out.println(String.format("%s, %s: after stimulus", rc.getRoundNum(), Clock.getBytecodesLeft()));
+//            System.out.println(String.format("I'm in state: %s", stateMachine.getCurrState()));
+//        }
         stateMachine.transition(stimulus, rc);
-        if (ROBOT_ID == TEST_ROBOT_ID) {
-            System.out.println(String.format("%s, %s: after transition", rc.getRoundNum(), Clock.getBytecodesLeft()));
-            System.out.println(String.format("I'm in state: %s", stateMachine.getCurrState()));
-        }
+//        if (ROBOT_ID == TEST_ROBOT_ID) {
+//            System.out.println(String.format("%s, %s: after transition", rc.getRoundNum(), Clock.getBytecodesLeft()));
+//            System.out.println(String.format("I'm in state: %s", stateMachine.getCurrState()));
+//        }
         rc.setIndicatorString(String.format("state: %s", stateMachine.getCurrState()));
 
         switch (stateMachine.getCurrState()) {
@@ -89,9 +89,9 @@ public class Miner {
             case TARGET:    runTargetActions(rc, stimulus); break;
             default: throw new RuntimeException("Should not be here");
         }
-        if (ROBOT_ID == TEST_ROBOT_ID) {
-            System.out.println(String.format("%s, %s: after run actions", rc.getRoundNum(), Clock.getBytecodesLeft()));
-        }
+//        if (ROBOT_ID == TEST_ROBOT_ID) {
+//            System.out.println(String.format("%s, %s: after run actions", rc.getRoundNum(), Clock.getBytecodesLeft()));
+//        }
     }
 
     public static void runCollectActions(RobotController rc, Stimulus stimulus) throws GameActionException {

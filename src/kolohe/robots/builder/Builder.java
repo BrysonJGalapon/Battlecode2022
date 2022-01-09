@@ -11,6 +11,7 @@ import kolohe.pathing.pathfinder.PathFinder;
 import kolohe.resource.allocation.ResourceAllocation;
 import kolohe.state.machine.StateMachine;
 import kolohe.state.machine.Stimulus;
+import kolohe.utils.Tuple;
 
 import java.util.List;
 import java.util.Optional;
@@ -182,14 +183,14 @@ public class Builder {
         tryMoveRandomDirection(rc);
     }
 
-    public static Optional<MapLocation> getAnyBroadcastedBuildingLocation(List<Message> messages) {
+    public static Optional<Tuple<RobotType, MapLocation>> getAnyBroadcastedBuildingLocation(List<Message> messages) {
         for (Message message : messages) {
-            // TODO once there is more space for messageType bits, add another filter for 'BUILD_LABORATORY_LOCATION' messages
-            if (!message.messageType.equals(MessageType.BUILD_WATCHTOWER_LOCATION)) {
-                continue;
+            switch (message.messageType) {
+                case BUILD_LABORATORY_LOCATION:
+                    return Optional.of(Tuple.of(RobotType.LABORATORY, message.location));
+                case BUILD_WATCHTOWER_LOCATION:
+                    return Optional.of(Tuple.of(RobotType.WATCHTOWER, message.location));
             }
-
-            return Optional.of(message.location);
         }
 
         return Optional.empty();
