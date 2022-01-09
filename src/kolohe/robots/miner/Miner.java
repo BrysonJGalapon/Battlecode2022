@@ -5,6 +5,7 @@ import kolohe.communication.Communicator;
 import kolohe.communication.Entity;
 import kolohe.communication.Message;
 import kolohe.communication.MessageType;
+import kolohe.communication.advanced.AdvancedCommunicator;
 import kolohe.communication.basic.BasicCommunicator;
 import kolohe.pathing.Explore;
 import kolohe.pathing.pathfinder.Fuzzy;
@@ -19,6 +20,7 @@ import java.util.Optional;
 
 import static kolohe.RobotPlayer.*;
 import static kolohe.utils.Parameters.*;
+import static kolohe.utils.Utils.getAge;
 import static kolohe.utils.Utils.tryMove;
 
 /*
@@ -32,7 +34,8 @@ public class Miner {
     private static final StateMachine<MinerState> stateMachine = StateMachine.startingAt(MinerState.EXPLORE);
     private static final PathFinder pathFinder = new Fuzzy();
     private static final Explore explorer = new Explore();
-    public static final Communicator communicator = new BasicCommunicator();
+//    public static final Communicator communicator = new BasicCommunicator();
+    public static final Communicator communicator = new AdvancedCommunicator();
 
     // state
     private static MapLocation targetLocation; // the current target location for this robot
@@ -60,11 +63,11 @@ public class Miner {
         return s;
     }
 
-    public static int getAge(RobotController rc) {
-        return rc.getRoundNum()-BIRTH_YEAR;
-    }
-
     public static void run(RobotController rc) throws GameActionException {
+        if (getAge(rc) == 0) {
+            return; // lots of bytecode is used to initialize the advanced communicator, so don't do anything on this turn
+        }
+
         if (ROBOT_ID == TEST_ROBOT_ID) {
             System.out.println(String.format("%s, %s: start run", rc.getRoundNum(), Clock.getBytecodesLeft()));
         }
@@ -99,7 +102,7 @@ public class Miner {
             MapLocation closestGoldLocation = getClosestResourceLocation(stimulus.myLocation, goldLocationsInView);
 
             communicator.sendMessage(rc, Message.buildSimpleLocationMessage(
-                    MessageType.GOLD_LOCATION, closestGoldLocation, Entity.ALL_MINERS, GOLD_LOCATION_MESSAGE_SHELF_LIFE));
+                    MessageType.GOLD_LOCATION, closestGoldLocation, Entity.ALL_MINERS));
 
             // gold is close enough to mine
             if (stimulus.myLocation.distanceSquaredTo(closestGoldLocation) < ROBOT_TYPE.actionRadiusSquared) {
@@ -123,7 +126,7 @@ public class Miner {
             MapLocation closestLeadLocation = getClosestResourceLocation(stimulus.myLocation, leadLocationsInView);
 
             communicator.sendMessage(rc, Message.buildSimpleLocationMessage(
-                    MessageType.LEAD_LOCATION, closestLeadLocation, Entity.ALL_MINERS, LEAD_LOCATION_MESSAGE_SHELF_LIFE));
+                    MessageType.LEAD_LOCATION, closestLeadLocation, Entity.ALL_MINERS));
             rc.setIndicatorDot(closestLeadLocation, 0,0,100);
 
             // lead is close enough to mine

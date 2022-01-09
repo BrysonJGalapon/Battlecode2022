@@ -13,7 +13,6 @@ import kolohe.state.machine.Stimulus;
 import java.util.Optional;
 
 import static kolohe.RobotPlayer.ROBOT_TYPE;
-import static kolohe.utils.Parameters.NEVER;
 
 public enum MinerState implements State {
     // is nearby resources, collects them
@@ -39,7 +38,7 @@ public enum MinerState implements State {
 
                 if (!Miner.isAnyResourceInView(stimulus.nearbyLocationsWithGold, stimulus.nearbyLocationsWithLead)) {
                     // let other miners know that there are no more resources here
-                    Miner.communicator.sendMessage(rc, Message.buildSimpleLocationMessage(MessageType.NO_RESOURCES_LOCATION, stimulus.myLocation, Entity.ALL_MINERS, NEVER));
+                    Miner.communicator.sendMessage(rc, Message.buildSimpleLocationMessage(MessageType.NO_RESOURCES_LOCATION, stimulus.myLocation, Entity.ALL_MINERS));
 
                     // see if other miners found any other resource locations
                     nextResourceLocation = Miner.getClosestBroadcastedResourceLocation(stimulus.myLocation, stimulus.messages);
@@ -107,7 +106,7 @@ public enum MinerState implements State {
                     int gold = rc.senseGold(Miner.getTargetLocation());
                     if (lead == 0 && gold == 0) {
                         // let other miners know there are no resources here
-                        Miner.communicator.sendMessage(rc, Message.buildSimpleLocationMessage(MessageType.NO_RESOURCES_LOCATION, stimulus.myLocation, Entity.ALL_MINERS, NEVER));
+                        Miner.communicator.sendMessage(rc, Message.buildSimpleLocationMessage(MessageType.NO_RESOURCES_LOCATION, stimulus.myLocation, Entity.ALL_MINERS));
                     }
                 }
 

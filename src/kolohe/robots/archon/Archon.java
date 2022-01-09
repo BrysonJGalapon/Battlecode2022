@@ -3,6 +3,7 @@ package kolohe.robots.archon;
 import battlecode.common.*;
 import kolohe.communication.Communicator;
 import kolohe.communication.Message;
+import kolohe.communication.advanced.AdvancedCommunicator;
 import kolohe.communication.basic.BasicCommunicator;
 import kolohe.resource.allocation.ResourceAllocation;
 import kolohe.state.machine.StateMachine;
@@ -15,8 +16,6 @@ import static kolohe.communication.Entity.ALL_BUILDERS;
 import static kolohe.communication.Entity.ALL_ROBOTS;
 import static kolohe.communication.MessageType.ARCHON_STATE;
 import static kolohe.communication.MessageType.BUILD_WATCHTOWER_LOCATION;
-import static kolohe.utils.Parameters.BUILD_WATCHTOWER_LOCATION_MESSAGE_SHELF_LIFE;
-import static kolohe.utils.Parameters.NEVER;
 import static kolohe.utils.Utils.*;
 
 /*
@@ -58,7 +57,8 @@ import static kolohe.utils.Utils.*;
  */
 public class Archon {
     public static final StateMachine<ArchonState> stateMachine = StateMachine.startingAt(ArchonState.RESOURCE_COLLECTION);
-    public static final Communicator communicator = new BasicCommunicator();
+//    public static final Communicator communicator = new BasicCommunicator();
+    public static final Communicator communicator = new AdvancedCommunicator();
     public static final ResourceAllocation resourceAllocation = new ResourceAllocation();
 
     public static int[] buildDistribution = null;
@@ -80,7 +80,7 @@ public class Archon {
         rc.setIndicatorString("I'm in state: " + stateMachine.getCurrState());
 
         // broadcast state to all robots
-        Message archonStateMessage = new Message(ARCHON_STATE, ALL_ROBOTS, NEVER);
+        Message archonStateMessage = new Message(ARCHON_STATE, ALL_ROBOTS);
         archonStateMessage.location = rc.getLocation();
         archonStateMessage.archonState = stateMachine.getCurrState();
         communicator.sendMessage(rc, archonStateMessage);
@@ -123,7 +123,7 @@ public class Archon {
                 RobotInfo robot = rc.senseRobotAtLocation(watchtowerLocation);
                 if (robot == null || robot.getTeam().equals(OPP_TEAM) || !robot.getType().equals(RobotType.WATCHTOWER)) {
                     communicator.sendMessage(rc, Message.buildSimpleLocationMessage(
-                            BUILD_WATCHTOWER_LOCATION, watchtowerLocation, ALL_BUILDERS, BUILD_WATCHTOWER_LOCATION_MESSAGE_SHELF_LIFE));
+                            BUILD_WATCHTOWER_LOCATION, watchtowerLocation, ALL_BUILDERS));
                 }
             }
         }

@@ -64,10 +64,10 @@ public class Parameters {
     // number of turns before a laboratory decides to force-update its primary archon location
     public static final int LABORATORY_PRIMARY_ARCHON_LOCATION_SHELF_LIFE = 50;
 
-    // expirations
-    public static final int NEVER = 2000;
-    public static final int BUILD_WATCHTOWER_LOCATION_MESSAGE_SHELF_LIFE = 20;
-    public static final int GOLD_LOCATION_MESSAGE_SHELF_LIFE = 20;
-    public static final int LEAD_LOCATION_MESSAGE_SHELF_LIFE = 20;
+//    // expirations
+//    public static final int NEVER = 2000;
+//    public static final int BUILD_WATCHTOWER_LOCATION_MESSAGE_SHELF_LIFE = 20;
+//    public static final int GOLD_LOCATION_MESSAGE_SHELF_LIFE = 20;
+//    public static final int LEAD_LOCATION_MESSAGE_SHELF_LIFE = 20;
 
 }

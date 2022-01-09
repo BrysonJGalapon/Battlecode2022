@@ -4,6 +4,7 @@ import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import kolohe.communication.Communicator;
+import kolohe.communication.advanced.AdvancedCommunicator;
 import kolohe.communication.basic.BasicCommunicator;
 import kolohe.resource.allocation.ResourceAllocation;
 import kolohe.state.machine.StateMachine;
@@ -25,7 +26,8 @@ import static kolohe.utils.Parameters.*;
 public class Laboratory {
     private static final StateMachine<LaboratoryState> stateMachine = StateMachine.startingAt(LaboratoryState.TRANSMUTE);
     public static final ResourceAllocation resourceAllocation = new ResourceAllocation();
-    public static final Communicator communicator = new BasicCommunicator();
+//    public static final Communicator communicator = new BasicCommunicator();
+    public static final Communicator communicator = new AdvancedCommunicator();
 
     public static double leadBudget = 0;
 

@@ -4,6 +4,7 @@ import battlecode.common.*;
 import kolohe.communication.Communicator;
 import kolohe.communication.Message;
 import kolohe.communication.MessageType;
+import kolohe.communication.advanced.AdvancedCommunicator;
 import kolohe.communication.basic.BasicCommunicator;
 import kolohe.pathing.pathfinder.Fuzzy;
 import kolohe.pathing.pathfinder.PathFinder;
@@ -19,6 +20,7 @@ import static kolohe.RobotPlayer.*;
 import static kolohe.resource.allocation.ResourceAllocation.getClosestBroadcastedArchonLocation;
 import static kolohe.utils.Parameters.BUILDER_RECEIVE_MESSAGE_BYTECODE_LIMIT;
 import static kolohe.utils.Parameters.BUILDER_RECEIVE_MESSAGE_LIMIT;
+import static kolohe.utils.Utils.getAge;
 import static kolohe.utils.Utils.tryMoveRandomDirection;
 
 /*
@@ -31,7 +33,8 @@ import static kolohe.utils.Utils.tryMoveRandomDirection;
 public class Builder {
     private static final StateMachine<BuilderState> stateMachine = StateMachine.startingAt(BuilderState.START);
     private static final PathFinder pathFinder = new Fuzzy();
-    public static final Communicator communicator = new BasicCommunicator();
+//    public static final Communicator communicator = new BasicCommunicator();
+    public static final Communicator communicator = new AdvancedCommunicator();
     public static final ResourceAllocation resourceAllocation = new ResourceAllocation();
 
     // state
@@ -100,6 +103,10 @@ public class Builder {
     }
 
     public static void run(RobotController rc) throws GameActionException {
+        if (getAge(rc) == 0) {
+            return; // lots of bytecode is used to initialize the advanced communicator, so don't do anything on this turn
+        }
+
         Stimulus stimulus = collectStimulus(rc);
         stateMachine.transition(stimulus, rc);
         rc.setIndicatorString(String.format("state: %s", stateMachine.getCurrState()));

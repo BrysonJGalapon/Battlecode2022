@@ -10,7 +10,6 @@ import kolohe.robots.archon.ArchonState;
 import java.util.*;
 
 import static kolohe.RobotPlayer.*;
-import static kolohe.utils.Parameters.NEVER;
 import static kolohe.utils.Utils.getRng;
 
 /*
@@ -162,12 +161,12 @@ public class BasicCommunicator implements Communicator {
         switch (entity) {
             case ALL_ROBOTS: return true;
             case ALL_MINERS: return robotType.equals(RobotType.MINER);
-            case ALL_ARCHONS: return robotType.equals(RobotType.ARCHON);
+//            case ALL_ARCHONS: return robotType.equals(RobotType.ARCHON);
             case ALL_BUILDERS: return robotType.equals(RobotType.BUILDER);
-            case ALL_LABORATORIES: return robotType.equals(RobotType.LABORATORY);
-            case ALL_SAGES: return robotType.equals(RobotType.SAGE);
-            case ALL_SOLDIERS: return robotType.equals(RobotType.SOLDIER);
-            case ALL_WATCHTOWERS: return robotType.equals(RobotType.WATCHTOWER); // TODO not enough bits :(
+//            case ALL_LABORATORIES: return robotType.equals(RobotType.LABORATORY);
+//            case ALL_SAGES: return robotType.equals(RobotType.SAGE);
+//            case ALL_SOLDIERS: return robotType.equals(RobotType.SOLDIER);
+//            case ALL_WATCHTOWERS: return robotType.equals(RobotType.WATCHTOWER); // TODO not enough bits :(
             default: throw new RuntimeException("Should not be here");
         }
     }
@@ -185,7 +184,7 @@ public class BasicCommunicator implements Communicator {
     }
 
     private static Optional<Message> decodeArchonStateMessage(int encoding) {
-        Message message = new Message(MessageType.ARCHON_STATE, Entity.ALL_ROBOTS, NEVER);
+        Message message = new Message(MessageType.ARCHON_STATE, Entity.ALL_ROBOTS);
 
         // extract archon state encoding
         int archonStateEncoding = encoding & getBitMask(ARCHON_STATE_BIT_LENGTH);
@@ -249,8 +248,7 @@ public class BasicCommunicator implements Communicator {
             return Optional.empty();
         }
 
-        // TODO extract timestamp info and include it
-        Message message = new Message(messageType.get(), entity.get(), NEVER);
+        Message message = new Message(messageType.get(), entity.get());
 
         // extract data encoding
         switch (messageType.get()) {

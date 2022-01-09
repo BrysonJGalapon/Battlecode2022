@@ -34,7 +34,7 @@ public enum ArchonState implements State {
         return encoding;
     }
 
-    public static Optional<ArchonState> decode(int encoding) {
+    public static Optional<ArchonState> decode(long encoding) {
         for (ArchonState archonState : ArchonState.values()) {
             if (archonState.encoding == encoding) {
                 return Optional.of(archonState);
