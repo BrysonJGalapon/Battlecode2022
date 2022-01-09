@@ -125,6 +125,7 @@ public class Archon {
                 // check if a watchTower is already there, and if not then tell builders to build there
                 RobotInfo robot = rc.senseRobotAtLocation(watchtowerLocation);
                 if (robot == null || robot.getTeam().equals(OPP_TEAM) || !robot.getType().equals(RobotType.WATCHTOWER)) {
+                    rc.setIndicatorLine(rc.getLocation(), watchtowerLocation, 0, 255, 0);
                     communicator.sendMessage(rc, Message.buildSimpleLocationMessage(
                             BUILD_WATCHTOWER_LOCATION, watchtowerLocation, ALL_BUILDERS));
                     return false;

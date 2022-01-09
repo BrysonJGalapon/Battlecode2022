@@ -23,7 +23,7 @@ public class Parameters {
     // The distribution is represented by [Miner, Builder, Sage, Soldier]
     public static final int[] ARCHON_RESOURCE_COLLECTION_BUILD_DISTRIBUTION = new int[]{3, 1, 0, 1};
     public static final int[] ARCHON_DEFEND_BUILD_DISTRIBUTION = new int[]{1, 1, 0, 3};
-    public static final int[] ARCHON_ATTACK_BUILD_DISTRIBUTION = new int[]{1, 1, 1, 6};
+    public static final int[] ARCHON_ATTACK_BUILD_DISTRIBUTION = new int[]{1, 1, 0, 6};
     public static final int[] ARCHON_SURVIVE_BUILD_DISTRIBUTION = new int[]{1, 1, 0, 4};
 
     // Distribution of lead and gold allocation limits per ResourceAllocation state.

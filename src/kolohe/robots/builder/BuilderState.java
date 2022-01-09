@@ -23,6 +23,10 @@ public enum BuilderState implements State {
 
     @Override
     public State react(Stimulus stimulus, RobotController rc) throws GameActionException {
+        Optional<MapLocation> primaryArchonLocation = Builder.getPrimaryArchonLocation(rc, stimulus);
+        if (primaryArchonLocation.isPresent()) {
+            Builder.primaryArchonLocation = primaryArchonLocation.get();
+        }
         Optional<Tuple<RobotType, MapLocation>> broadcastedBuildingLocation = Builder.getAnyBroadcastedBuildingLocation(stimulus.messages);
 
         switch (this) {

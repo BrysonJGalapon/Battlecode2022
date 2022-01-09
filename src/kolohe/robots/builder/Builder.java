@@ -34,14 +34,13 @@ import static kolohe.utils.Utils.tryMoveRandomDirection;
 public class Builder {
     private static final StateMachine<BuilderState> stateMachine = StateMachine.startingAt(BuilderState.START);
     private static final PathFinder pathFinder = new Fuzzy();
-//    public static final Communicator communicator = new BasicCommunicator();
     public static final Communicator communicator = new AdvancedCommunicator();
     public static final ResourceAllocation resourceAllocation = new ResourceAllocation();
 
     // state
     public static MapLocation buildLocation; // the location to build the next building
     public static RobotType robotToBuild; // the type of building to build (laboratory or watchtower)
-    private static MapLocation primaryArchonLocation; // the location of the archon that this builder is following
+    public static MapLocation primaryArchonLocation; // the location of the archon that this builder is following
 
     public static double leadBudget = 0;
 
@@ -187,9 +186,17 @@ public class Builder {
         for (Message message : messages) {
             switch (message.messageType) {
                 case BUILD_LABORATORY_LOCATION:
-                    return Optional.of(Tuple.of(RobotType.LABORATORY, message.location));
+                    // only listen to the primary archon's broadcasted messages
+                    if (primaryArchonLocation != null && message.location.isWithinDistanceSquared(primaryArchonLocation, 32)) {
+                        return Optional.of(Tuple.of(RobotType.LABORATORY, message.location));
+                    }
+                    break;
                 case BUILD_WATCHTOWER_LOCATION:
-                    return Optional.of(Tuple.of(RobotType.WATCHTOWER, message.location));
+                    // only listen to the primary archon's broadcasted messages
+                    if (primaryArchonLocation != null && message.location.isWithinDistanceSquared(primaryArchonLocation, 32)) {
+                        return Optional.of(Tuple.of(RobotType.WATCHTOWER, message.location));
+                    }
+                    break;
             }
         }
 
