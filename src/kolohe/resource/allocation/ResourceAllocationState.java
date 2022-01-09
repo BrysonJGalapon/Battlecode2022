@@ -3,12 +3,12 @@ package kolohe.resource.allocation;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
-import battlecode.common.RobotType;
 import kolohe.communication.Message;
 import kolohe.communication.MessageType;
 import kolohe.robots.archon.Archon;
 import kolohe.robots.archon.ArchonState;
 import kolohe.robots.builder.Builder;
+import kolohe.robots.laboratory.Laboratory;
 import kolohe.state.machine.State;
 import kolohe.state.machine.Stimulus;
 
@@ -51,6 +51,7 @@ public enum ResourceAllocationState implements State {
         switch(ROBOT_TYPE) {
             case ARCHON: return Optional.of(Archon.stateMachine.getCurrState());
             case BUILDER: primaryArchonLocation = Builder.getPrimaryArchonLocation(rc, stimulus); break;
+            case LABORATORY: primaryArchonLocation = Laboratory.getPrimaryArchonLocation(rc, stimulus); break;
             default: throw new RuntimeException("Should not be here");
         }
 

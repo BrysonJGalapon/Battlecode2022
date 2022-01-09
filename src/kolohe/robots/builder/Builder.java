@@ -16,6 +16,7 @@ import java.util.Optional;
 
 import static battlecode.common.RobotMode.PROTOTYPE;
 import static kolohe.RobotPlayer.*;
+import static kolohe.resource.allocation.ResourceAllocation.getClosestBroadcastedArchonLocation;
 import static kolohe.utils.Parameters.BUILDER_RECEIVE_MESSAGE_BYTECODE_LIMIT;
 import static kolohe.utils.Parameters.BUILDER_RECEIVE_MESSAGE_LIMIT;
 import static kolohe.utils.Utils.tryMoveRandomDirection;
@@ -87,23 +88,15 @@ public class Builder {
             }
         }
 
-        // check for broadcasted archon locations, and select the closest one
-        MapLocation bestBroadcastedArchonLocation = null;
-        int bestBroadcastedArchonLocationDistance = 0;
-        for (Message message : stimulus.messages) {
-            if (!message.messageType.equals(MessageType.ARCHON_STATE)) {
-                continue;
-            }
-
-            MapLocation broadcastedArchonLocation = message.location;
-            int broadcastedArchonLocationDistance = rc.getLocation().distanceSquaredTo(broadcastedArchonLocation);
-            if (bestBroadcastedArchonLocation == null || broadcastedArchonLocationDistance < bestBroadcastedArchonLocationDistance) {
-                bestBroadcastedArchonLocation = broadcastedArchonLocation;
-                bestBroadcastedArchonLocationDistance = broadcastedArchonLocationDistance;
-            }
+        // check for any broadcasted archon locations
+        Optional<MapLocation> closestBroadcastedArchonLocation = getClosestBroadcastedArchonLocation(rc, stimulus);
+        if (!closestBroadcastedArchonLocation.isPresent()) {
+            // could not find any broadcasted locations turn, which is unlucky (not even sure if this is possible)
+            return Optional.empty();
         }
-        primaryArchonLocation = bestBroadcastedArchonLocation;
-        return (primaryArchonLocation != null) ? Optional.of(primaryArchonLocation) : Optional.empty();
+        
+        primaryArchonLocation = closestBroadcastedArchonLocation.get();
+        return closestBroadcastedArchonLocation;
     }
 
     public static void run(RobotController rc) throws GameActionException {

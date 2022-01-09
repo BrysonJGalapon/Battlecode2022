@@ -62,7 +62,6 @@ public class Archon {
     public static int[] buildDistribution = null;
     public static double leadBudget = 0;
     public static double goldBudget = 0;
-    public static RobotController rc;
     public static RobotType robotToBuild;
 
     private static Stimulus collectStimulus(RobotController rc)  {
@@ -73,9 +72,6 @@ public class Archon {
     }
 
     public static void run(RobotController rc) throws GameActionException {
-        // TODO delete this
-        Archon.rc = rc;
-
         Stimulus stimulus = collectStimulus(rc);
         stateMachine.transition(stimulus, rc);
 

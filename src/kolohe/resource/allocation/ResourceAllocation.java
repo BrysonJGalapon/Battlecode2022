@@ -1,10 +1,15 @@
 package kolohe.resource.allocation;
 
 import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
+import kolohe.communication.Message;
+import kolohe.communication.MessageType;
 import kolohe.state.machine.StateMachine;
 import kolohe.state.machine.Stimulus;
+
+import java.util.Optional;
 
 import static kolohe.RobotPlayer.*;
 import static kolohe.utils.Parameters.*;
@@ -90,5 +95,25 @@ public class ResourceAllocation {
             case LABORATORY: return 2;
             default: throw new RuntimeException("Should not be here");
         }
+    }
+
+    public static Optional<MapLocation> getClosestBroadcastedArchonLocation(RobotController rc, Stimulus stimulus) {
+        // check for broadcasted archon locations, and select the closest one
+        MapLocation bestBroadcastedArchonLocation = null;
+        int bestBroadcastedArchonLocationDistance = 0;
+        for (Message message : stimulus.messages) {
+            if (!message.messageType.equals(MessageType.ARCHON_STATE)) {
+                continue;
+            }
+
+            MapLocation broadcastedArchonLocation = message.location;
+            int broadcastedArchonLocationDistance = rc.getLocation().distanceSquaredTo(broadcastedArchonLocation);
+            if (bestBroadcastedArchonLocation == null || broadcastedArchonLocationDistance < bestBroadcastedArchonLocationDistance) {
+                bestBroadcastedArchonLocation = broadcastedArchonLocation;
+                bestBroadcastedArchonLocationDistance = broadcastedArchonLocationDistance;
+            }
+        }
+
+        return (bestBroadcastedArchonLocation != null) ? Optional.of(bestBroadcastedArchonLocation) : Optional.empty();
     }
 }

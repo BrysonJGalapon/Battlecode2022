@@ -11,22 +11,22 @@ public class Parameters {
     public static final int MINER_RECEIVE_MESSAGE_BYTECODE_LIMIT = 2000;
     public static final int BUILDER_RECEIVE_MESSAGE_BYTECODE_LIMIT = 3500;
     public static final int SOLDIER_RECEIVE_MESSAGE_BYTECODE_LIMIT = 3500;
+    public static final int LABORATORY_RECEIVE_MESSAGE_BYTECODE_LIMIT = 3000;
 
     public static final int MINER_RECEIVE_MESSAGE_LIMIT = 10000;
     public static final int BUILDER_RECEIVE_MESSAGE_LIMIT = 10000;
     public static final int SOLDIER_RECEIVE_MESSAGE_LIMIT = 10000;
+    public static final int LABORATORY_RECEIVE_MESSAGE_LIMIT = 10000;
     public static final int ARCHON_RECEIVE_MESSAGE_LIMIT = 14;
 
     // Distribution of droid robots to build per Archon state.
     // The distribution is represented by [Miner, Builder, Sage, Soldier]
     public static final int[] ARCHON_RESOURCE_COLLECTION_BUILD_DISTRIBUTION = new int[]{3, 1, 0, 1};
     public static final int[] ARCHON_DEFEND_BUILD_DISTRIBUTION = new int[]{1, 1, 0, 3};
-//    public static final int[] ARCHON_ATTACK_BUILD_DISTRIBUTION = new int[]{0, 0, 1, 3};
-    // TODO re-enable building sage once we start building laboratories
     public static final int[] ARCHON_ATTACK_BUILD_DISTRIBUTION = new int[]{1, 1, 0, 6};
-//    public static final int[] ARCHON_SURVIVE_BUILD_DISTRIBUTION = new int[]{0, 1, 1, 3};
+//    public static final int[] ARCHON_SURVIVE_BUILD_DISTRIBUTION = new int[]{1, 1, 1, 4};
 // TODO re-enable building sage once we start building laboratories
-    public static final int[] ARCHON_SURVIVE_BUILD_DISTRIBUTION = new int[]{0, 1, 0, 4};
+    public static final int[] ARCHON_SURVIVE_BUILD_DISTRIBUTION = new int[]{1, 1, 0, 4};
 
     // Distribution of lead and gold allocation limits per ResourceAllocation state.
     // The distribution is represented by [Archon, Builder, Laboratory]
@@ -36,10 +36,10 @@ public class Parameters {
     public static final int[] RESOURCE_ALLOCATION_ATTACK_LEAD_DISTIBUTION = new int[]{85, 5, 10};
     public static final int[] RESOURCE_ALLOCATION_SURVIVE_LEAD_DISTIBUTION = new int[]{100, 0, 0};
 
-    public static final int[] RESOURCE_ALLOCATION_RESOURCE_COLLECTION_GOLD_DISTIBUTION = new int[]{20, 40, 40};
-    public static final int[] RESOURCE_ALLOCATION_DEFEND_GOLD_DISTIBUTION = new int[]{20, 40, 40};
-    public static final int[] RESOURCE_ALLOCATION_ATTACK_GOLD_DISTIBUTION = new int[]{20, 40, 40};
-    public static final int[] RESOURCE_ALLOCATION_SURVIVE_GOLD_DISTIBUTION = new int[]{20, 40, 40};
+    public static final int[] RESOURCE_ALLOCATION_RESOURCE_COLLECTION_GOLD_DISTIBUTION = new int[]{50, 50, 0};
+    public static final int[] RESOURCE_ALLOCATION_DEFEND_GOLD_DISTIBUTION = new int[]{20, 80, 0};
+    public static final int[] RESOURCE_ALLOCATION_ATTACK_GOLD_DISTIBUTION = new int[]{95, 5, 0};
+    public static final int[] RESOURCE_ALLOCATION_SURVIVE_GOLD_DISTIBUTION = new int[]{100, 0, 0};
 
     // Makes resource-utilization entities more aggressive in using resources
     public static final double RESOURCE_ALLOCATION_RESOURCE_OVERLAP_FACTOR = 1.2;
@@ -60,4 +60,8 @@ public class Parameters {
 
     // number of rounds that must pass before survival state is reached
     public static int ARCHON_SURVIVE_GRACE_PERIOD = 200;
+
+    // number of turns before a laboratory decides to force-update its primary archon location
+    public static int LABORATORY_PRIMARY_ARCHON_LOCATION_SHELF_LIFE = 50;
+
 }

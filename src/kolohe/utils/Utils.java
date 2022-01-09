@@ -15,7 +15,6 @@ import static kolohe.pathing.RotationPreference.getRandomConcreteRotationPrefere
 public class Utils {
     public static final long SEED_FACTOR = 123141;
     private static Random RNG;
-    public static int MAX_RUBBLE = 100;
 
     /** Array containing all the possible movement directions. */
     public static final Direction[] ALL_MOVEMENT_DIRECTIONS = {
