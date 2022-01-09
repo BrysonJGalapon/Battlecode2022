@@ -6,21 +6,62 @@ import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import kolohe.pathing.WallFollower;
 
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.Optional;
 
 public class Fuzzy extends WallFollower implements PathFinder {
     private static final int IMMOVABLE_OBJECT_COST = 1000;
+    private static final int MAX_VISITED_SIZE = 10;
+    private final Deque<MapLocation> visited = new LinkedList<>();
 
-    private static int getCost(MapLocation loc, RobotController rc) throws GameActionException {
-        // consider edges of the map and other robots as 'immovable objects'
-        if (!rc.onTheMap(loc) || rc.senseRobotAtLocation(loc) != null) {
+    private boolean isLeftDisabled = false;
+    private boolean isRightDisabled = false;
+
+    private int getCost(MapLocation loc, RobotController rc) throws GameActionException {
+        // consider edges of the map, other robots, and previously visited squares as 'immovable objects'
+        if (!rc.onTheMap(loc) || rc.senseRobotAtLocation(loc) != null || visited.contains(loc)) {
             return IMMOVABLE_OBJECT_COST;
         }
 
         return rc.senseRubble(loc);
     }
 
-    public static Optional<Direction> getFuzzyDirection(MapLocation src, Direction straightAhead, RobotController rc) throws GameActionException {
+    public void visit(MapLocation src) {
+        visited.addLast(src);
+        if (visited.size() >= MAX_VISITED_SIZE) {
+            visited.removeFirst();
+        }
+    }
+
+    public void disableLeft() {
+        this.isLeftDisabled = true;
+    }
+
+    public void disableRight() {
+        this.isRightDisabled = true;
+    }
+
+    public void enableLeft() {
+        this.isLeftDisabled = false;
+    }
+
+    public void enableRight() {
+        this.isRightDisabled = false;
+    }
+
+    public void disableLeftAndRight() {
+        disableLeft();
+        disableRight();
+    }
+
+    public void enableLeftAndRight() {
+        enableLeft();
+        enableRight();
+    }
+
+    public Optional<Direction> getFuzzyDirection(MapLocation src, Direction straightAhead, RobotController rc) throws GameActionException {
+        visit(src);
         Direction slightlyLeft = straightAhead.rotateLeft();
         Direction slightlyRight = straightAhead.rotateRight();
         Direction left = slightlyLeft.rotateLeft();
@@ -37,12 +78,20 @@ public class Fuzzy extends WallFollower implements PathFinder {
                 10 * getCost(slightlyLeftLocation, rc),
                 10 * getCost(slightlyRightLocation, rc),
                 35 * getCost(leftLocation, rc),
-                35 *  getCost(rightLocation, rc),
+                35 * getCost(rightLocation, rc),
         };
 
-        int minCost = 10*IMMOVABLE_OBJECT_COST;
+        int minCost = 10 * IMMOVABLE_OBJECT_COST;
         int minCostIndex = -1;
         for (int i = 0; i < costs.length; i++) {
+            if (this.isLeftDisabled && (i == 3)) {
+                continue;
+            }
+
+            if (this.isRightDisabled && (i == 4)) {
+                continue;
+            }
+
             if (costs[i] < minCost) {
                 minCost = costs[i];
                 minCostIndex = i;

@@ -1,7 +1,6 @@
-package kolohe.pathing.pathfinder;
+package kolohe.pathing;
 
 import battlecode.common.*;
-import kolohe.pathing.pathfinder.PathFinder;
 import kolohe.utils.Utils;
 
 import java.util.Optional;

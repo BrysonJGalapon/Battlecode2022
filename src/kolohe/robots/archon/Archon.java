@@ -121,7 +121,6 @@ public class Archon {
                 RobotInfo robot = rc.senseRobotAtLocation(watchtowerLocation);
                 if (robot == null || robot.getTeam().equals(OPP_TEAM) || !robot.getType().equals(RobotType.WATCHTOWER)) {
                     communicator.sendMessage(rc, Message.buildSimpleLocationMessage(BUILD_WATCHTOWER_LOCATION, watchtowerLocation, ALL_BUILDERS));
-                    break;
                 }
             }
         }

@@ -6,7 +6,7 @@ import kolohe.communication.Entity;
 import kolohe.communication.Message;
 import kolohe.communication.MessageType;
 import kolohe.communication.basic.BasicCommunicator;
-import kolohe.pathing.pathfinder.Explore;
+import kolohe.pathing.Explore;
 import kolohe.pathing.pathfinder.Fuzzy;
 import kolohe.pathing.pathfinder.PathFinder;
 import kolohe.state.machine.StateMachine;

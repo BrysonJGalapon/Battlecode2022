@@ -30,4 +30,5 @@ client
 
 gradlew
 version.txt
+.DS_Store
 matches/*

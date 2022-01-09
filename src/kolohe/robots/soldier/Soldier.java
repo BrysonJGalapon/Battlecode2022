@@ -2,8 +2,11 @@ package kolohe.robots.soldier;
 
 import battlecode.common.*;
 import kolohe.communication.Communicator;
+import kolohe.communication.Entity;
+import kolohe.communication.Message;
+import kolohe.communication.MessageType;
 import kolohe.communication.basic.BasicCommunicator;
-import kolohe.pathing.pathfinder.Explore;
+import kolohe.pathing.Explore;
 import kolohe.pathing.pathfinder.Fuzzy;
 import kolohe.pathing.pathfinder.PathFinder;
 import kolohe.state.machine.StateMachine;
@@ -61,6 +64,7 @@ public class Soldier {
         return enemyNearbyRobotsInfo[0];
     }
 
+    // TODO dayne to improve
     public static void runAttackActions(RobotController rc, Stimulus stimulus) throws GameActionException {
         // attack an enemy
         MapLocation attackLocation = chooseEnemyToAttack(stimulus.enemyNearbyRobotsInfo).location;
@@ -87,6 +91,12 @@ public class Soldier {
                 explorer.setDirection(oppositeDirection);
                 break;
             }
+        }
+
+        // since soldiers do not use much bytecode in this state, use extra bytecode to report lead locations
+        MapLocation[] nearbyLocationsWithLead = rc.senseNearbyLocationsWithLead(ROBOT_TYPE.visionRadiusSquared);
+        if (nearbyLocationsWithLead.length > 0) {
+            communicator.sendMessage(rc, Message.buildSimpleLocationMessage(MessageType.LEAD_LOCATION, nearbyLocationsWithLead[0], Entity.ALL_MINERS));
         }
 
         Optional<Direction> direction = explorer.explore(rc.getLocation(), rc);
