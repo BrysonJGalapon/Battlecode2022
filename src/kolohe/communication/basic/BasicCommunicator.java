@@ -108,36 +108,6 @@ public class BasicCommunicator implements Communicator {
             }
         }
 
-//
-//        while (indicesRead.size() < limit || indicesRead.size() >= SHARED_ARRAY_LENGTH) {
-//            // prevent reading from same index repeatedly
-//            int indexToRead = getRng().nextInt(SHARED_ARRAY_LENGTH);
-//            if (indicesRead.contains(indexToRead)) {
-//                continue;
-//            }
-//
-//            int encoding = rc.readSharedArray(indexToRead);
-//
-//            indicesRead.add(indexToRead);
-//            if (encoding == 0) {
-//                continue;
-//            }
-//
-//            Optional<Message> message;
-//
-//            // decode the message, based on the index
-//            if (indexToRead < NUM_RESERVED_ARCHON_STATE_INDICES) {
-//                message = decodeArchonStateMessage(encoding);
-//            } else {
-//                message = decode(encoding);
-//            }
-//
-//            // load the message if current robot is a valid recipient of it
-//            if (message.isPresent() && isRecipientOfMessage(ROBOT_TYPE, message.get())) {
-//                messages.add(message.get());
-//            }
-//        }
-
         return messages;
     }
 
@@ -256,7 +226,7 @@ public class BasicCommunicator implements Communicator {
         encoding = append(encoding, message.messageType.encode(), MESSAGE_TYPE_BIT_LENGTH);
 
         // append Entity encoding
-        // encoding = append(encoding, message.entity.encode(), ENTITY_BIT_LENGTH);
+         encoding = append(encoding, message.entity.encode(), ENTITY_BIT_LENGTH);
 
         return encoding;
     }
@@ -269,7 +239,6 @@ public class BasicCommunicator implements Communicator {
         if (!entity.isPresent()) {
             return Optional.empty();
         }
-
 
         // extract MessageType encoding
         int messageTypeEncoding = encoding & getBitMask(MESSAGE_TYPE_BIT_LENGTH);

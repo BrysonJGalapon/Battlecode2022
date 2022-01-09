@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static kolohe.RobotPlayer.*;
-import static kolohe.utils.Utils.RNG;
+import static kolohe.utils.Utils.getRng;
 
 /*
     Each index in the shared array represents a message. Keeps a pointer to the next index of
@@ -63,14 +63,14 @@ public class BetterCommunicator implements Communicator {
 
     @Override
     public void sendMessage(RobotController rc, Message message) throws GameActionException {
-        long encoding = encode(message);
+        int encoding = encode(message);
         // add new messagetype, if messagetype = archon
-//        if (message.getMessageType() == MessageType.ALLY_ARCHON_STATE) {
-//            rc.writeSharedArray(this.idxArchonState, encoding);
-//            idxArchonState = (idxArchonState + 1) % 52;
-//            if (idxArchonState == 0) { idxArchonState = 49; }
-//            lastIndex = idxArchonState;
-//        }
+        if (message.getMessageType() == MessageType.ARCHON_STATE) {
+            rc.writeSharedArray(this.idxArchonState, encoding);
+            idxArchonState = (idxArchonState + 1) % 52;
+            if (idxArchonState == 0) { idxArchonState = 49; }
+            lastIndex = idxArchonState;
+        }
         else {
             switch (rc.getType()) {
                 case MINER: {
@@ -141,11 +141,11 @@ public class BetterCommunicator implements Communicator {
     }
 
     @Override
-    public List<Message> receiveMessages(RobotController rc, int limit) throws GameActionException {
+    public List<Message> receiveMessages(RobotController rc, int limit, int bytecodeLimit) throws GameActionException {
         List<Message> messages = new LinkedList<>();
 
         for (int i = 0; i < limit; i++) {
-            int encoding = rc.readSharedArray(RNG.nextInt(SHARED_ARRAY_LENGTH));
+            int encoding = rc.readSharedArray(getRng().nextInt(SHARED_ARRAY_LENGTH));
             Optional<Message> message = decode(encoding);
             if (message.isPresent() && isRecipientOfMessage(ROBOT_TYPE, message.get())) {
                 messages.add(message.get());
@@ -174,8 +174,8 @@ public class BetterCommunicator implements Communicator {
 
     /* | data | messageType | expiration | timestamp | entity | length of data | */
     // add to message length of data
-    private static long encode(Message message) {
-        long encoding = 0;
+    private static int encode(Message message) {
+        int encoding = 0;
 
         // append data encoding
         switch (message.messageType) {
@@ -202,11 +202,6 @@ public class BetterCommunicator implements Communicator {
 
     public static Optional<Message> decode(int encoding) {
         int messageLength = encoding & getBitMask(ENTITY_BIT_LENGTH);
-        Optional<Entity> entity = Entity.decode(entityEncoding);
-        encoding = encoding >> ENTITY_BIT_LENGTH;
-        if (!entity.isPresent()) {
-            return Optional.empty();
-        }
 
          //extract Entity encoding
          int entityEncoding = encoding & getBitMask(ENTITY_BIT_LENGTH);
@@ -261,7 +256,7 @@ public class BetterCommunicator implements Communicator {
         return Optional.of(message);
     }
 
-    private static long append(long encoding1, int encoding2, int encoding2Length) {
+    private static int append(int encoding1, int encoding2, int encoding2Length) {
         return (encoding1 << encoding2Length) | encoding2;
     }
 
