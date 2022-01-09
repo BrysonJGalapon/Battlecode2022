@@ -98,7 +98,8 @@ public class Miner {
             // TODO decide location to go to as a function of gold quantity, instead of just distance
             MapLocation closestGoldLocation = getClosestResourceLocation(stimulus.myLocation, goldLocationsInView);
 
-            communicator.sendMessage(rc, Message.buildSimpleLocationMessage(MessageType.GOLD_LOCATION, closestGoldLocation, Entity.ALL_MINERS));
+            communicator.sendMessage(rc, Message.buildSimpleLocationMessage(
+                    MessageType.GOLD_LOCATION, closestGoldLocation, Entity.ALL_MINERS, GOLD_LOCATION_MESSAGE_SHELF_LIFE));
 
             // gold is close enough to mine
             if (stimulus.myLocation.distanceSquaredTo(closestGoldLocation) < ROBOT_TYPE.actionRadiusSquared) {
@@ -121,7 +122,8 @@ public class Miner {
             // TODO decide location to go to as a function of lead quantity, instead of just distance
             MapLocation closestLeadLocation = getClosestResourceLocation(stimulus.myLocation, leadLocationsInView);
 
-            communicator.sendMessage(rc, Message.buildSimpleLocationMessage(MessageType.LEAD_LOCATION, closestLeadLocation, Entity.ALL_MINERS));
+            communicator.sendMessage(rc, Message.buildSimpleLocationMessage(
+                    MessageType.LEAD_LOCATION, closestLeadLocation, Entity.ALL_MINERS, LEAD_LOCATION_MESSAGE_SHELF_LIFE));
             rc.setIndicatorDot(closestLeadLocation, 0,0,100);
 
             // lead is close enough to mine

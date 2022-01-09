@@ -15,6 +15,8 @@ import static kolohe.communication.Entity.ALL_BUILDERS;
 import static kolohe.communication.Entity.ALL_ROBOTS;
 import static kolohe.communication.MessageType.ARCHON_STATE;
 import static kolohe.communication.MessageType.BUILD_WATCHTOWER_LOCATION;
+import static kolohe.utils.Parameters.BUILD_WATCHTOWER_LOCATION_MESSAGE_SHELF_LIFE;
+import static kolohe.utils.Parameters.NEVER;
 import static kolohe.utils.Utils.*;
 
 /*
@@ -78,7 +80,7 @@ public class Archon {
         rc.setIndicatorString("I'm in state: " + stateMachine.getCurrState());
 
         // broadcast state to all robots
-        Message archonStateMessage = new Message(ARCHON_STATE, ALL_ROBOTS);
+        Message archonStateMessage = new Message(ARCHON_STATE, ALL_ROBOTS, NEVER);
         archonStateMessage.location = rc.getLocation();
         archonStateMessage.archonState = stateMachine.getCurrState();
         communicator.sendMessage(rc, archonStateMessage);
@@ -120,7 +122,8 @@ public class Archon {
                 // check if a watchTower is already there, and if not then tell builders to build there
                 RobotInfo robot = rc.senseRobotAtLocation(watchtowerLocation);
                 if (robot == null || robot.getTeam().equals(OPP_TEAM) || !robot.getType().equals(RobotType.WATCHTOWER)) {
-                    communicator.sendMessage(rc, Message.buildSimpleLocationMessage(BUILD_WATCHTOWER_LOCATION, watchtowerLocation, ALL_BUILDERS));
+                    communicator.sendMessage(rc, Message.buildSimpleLocationMessage(
+                            BUILD_WATCHTOWER_LOCATION, watchtowerLocation, ALL_BUILDERS, BUILD_WATCHTOWER_LOCATION_MESSAGE_SHELF_LIFE));
                 }
             }
         }

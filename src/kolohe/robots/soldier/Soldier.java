@@ -15,8 +15,7 @@ import kolohe.state.machine.Stimulus;
 import java.util.Optional;
 
 import static kolohe.RobotPlayer.*;
-import static kolohe.utils.Parameters.SOLDIER_RECEIVE_MESSAGE_BYTECODE_LIMIT;
-import static kolohe.utils.Parameters.SOLDIER_RECEIVE_MESSAGE_LIMIT;
+import static kolohe.utils.Parameters.*;
 import static kolohe.utils.Utils.tryMove;
 
 /*
@@ -96,7 +95,8 @@ public class Soldier {
         // since soldiers do not use much bytecode in this state, use extra bytecode to report lead locations
         MapLocation[] nearbyLocationsWithLead = rc.senseNearbyLocationsWithLead(ROBOT_TYPE.visionRadiusSquared);
         if (nearbyLocationsWithLead.length > 0) {
-            communicator.sendMessage(rc, Message.buildSimpleLocationMessage(MessageType.LEAD_LOCATION, nearbyLocationsWithLead[0], Entity.ALL_MINERS));
+            communicator.sendMessage(rc, Message.buildSimpleLocationMessage(
+                    MessageType.LEAD_LOCATION, nearbyLocationsWithLead[0], Entity.ALL_MINERS, LEAD_LOCATION_MESSAGE_SHELF_LIFE));
         }
 
         Optional<Direction> direction = explorer.explore(rc.getLocation(), rc);

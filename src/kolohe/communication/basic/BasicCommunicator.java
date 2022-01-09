@@ -10,6 +10,7 @@ import kolohe.robots.archon.ArchonState;
 import java.util.*;
 
 import static kolohe.RobotPlayer.*;
+import static kolohe.utils.Parameters.NEVER;
 import static kolohe.utils.Utils.getRng;
 
 /*
@@ -184,7 +185,7 @@ public class BasicCommunicator implements Communicator {
     }
 
     private static Optional<Message> decodeArchonStateMessage(int encoding) {
-        Message message = new Message(MessageType.ARCHON_STATE, Entity.ALL_ROBOTS);
+        Message message = new Message(MessageType.ARCHON_STATE, Entity.ALL_ROBOTS, NEVER);
 
         // extract archon state encoding
         int archonStateEncoding = encoding & getBitMask(ARCHON_STATE_BIT_LENGTH);
@@ -248,7 +249,8 @@ public class BasicCommunicator implements Communicator {
             return Optional.empty();
         }
 
-        Message message = new Message(messageType.get(), entity.get());
+        // TODO extract timestamp info and include it
+        Message message = new Message(messageType.get(), entity.get(), NEVER);
 
         // extract data encoding
         switch (messageType.get()) {
