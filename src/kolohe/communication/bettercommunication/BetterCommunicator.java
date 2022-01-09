@@ -38,12 +38,15 @@ public class BetterCommunicator implements Communicator {
     // map location = 12 bits
 
 
-    //private static final int ENTITY_BIT_LENGTH = 2; // supports 2^2 = 4 different entities
+    private static final int ENTITY_BIT_LENGTH = 3; // supports 2^2 = 4 different entities
 
     // store timestamp
     //private static final int TIMESTAMP = 1;
-    private static final int MESSAGE_TYPE_BIT_LENGTH = 4; // supports 2^4 = 16 different message types
+    // allocations
     private static final int MAP_LOCATION_BIT_LENGTH = 12; // supports 2^12 = 4,096 different map locations
+    private static final int MESSAGE_TYPE_BIT_LENGTH = 4; // supports 2^4 = 16 different message types
+    private static final int EXPIRATION_TIME_BIT_LENGTH = 11; // supports 2^4 = 16 different message types
+    private static final int TIMESTAMP_BIT_LENGTH = 11;
 
     // 4 indices archon states
 
@@ -54,67 +57,87 @@ public class BetterCommunicator implements Communicator {
     private int idxSage = 28;
     private int idxSoldier = 35;
     private int idxWatchtower = 42;
+    private int idxArchonState = 49; // 49-52
 
     public static int lastIndex = 0;
 
     @Override
     public void sendMessage(RobotController rc, Message message) throws GameActionException {
-        int encoding = encode(message);
-
-        switch (rc.getType()) {
-            case MINER: {
-                rc.writeSharedArray(this.idxMiner, encoding);
-                idxMiner = (idxMiner + 1) % 7;
-                lastIndex = idxMiner;
-                break;
-            }
-            case ARCHON: {
-                rc.writeSharedArray(this.idxArchon, encoding);
-                idxArchon = (idxArchon + 1) % 14;
-                if (idxArchon == 0) { idxArchon = 7; }
-                lastIndex = idxArchon;
-                break;
-            }
-            case BUILDER: {
-                rc.writeSharedArray(this.idxBuilder, encoding);
-                idxBuilder = (idxBuilder + 1) % 21;
-                if (idxBuilder == 0) { idxBuilder = 14; }
-                lastIndex = idxBuilder;
-                break;
-            }
-            case LABORATORY: {
-                rc.writeSharedArray(this.idxLaboratory, encoding);
-                idxLaboratory = (idxLaboratory + 1) % 28;
-                if (idxLaboratory == 0) { idxLaboratory = 21; }
-                lastIndex = idxLaboratory;
-                break;
-            }
-            case SAGE: {
-                rc.writeSharedArray(this.idxSage, encoding);
-                idxSage = (idxSage + 1) % 35;
-                if (idxSage == 0) { idxSage = 28; }
-                lastIndex = idxSage;
-                break;
-            }
-            case SOLDIER: {
-                rc.writeSharedArray(this.idxSoldier, encoding);
-                idxSoldier = (idxSoldier + 1) % 42;
-                if (idxSoldier == 0) { idxSoldier = 35; }
-                lastIndex = idxSoldier;
-                break;
-            }
-            case WATCHTOWER: {
-                rc.writeSharedArray(this.idxWatchtower, encoding);
-                idxWatchtower = (idxWatchtower + 1) % 49;
-                if (idxWatchtower == 0) { idxWatchtower = 42; }
-                lastIndex = idxWatchtower;
-                break;
-            }
-            default: {
-                throw new RuntimeException("Should not be here");
+        long encoding = encode(message);
+        // add new messagetype, if messagetype = archon
+//        if (message.getMessageType() == MessageType.ALLY_ARCHON_STATE) {
+//            rc.writeSharedArray(this.idxArchonState, encoding);
+//            idxArchonState = (idxArchonState + 1) % 52;
+//            if (idxArchonState == 0) { idxArchonState = 49; }
+//            lastIndex = idxArchonState;
+//        }
+        else {
+            switch (rc.getType()) {
+                case MINER: {
+                    rc.writeSharedArray(this.idxMiner, encoding);
+                    idxMiner = (idxMiner + 1) % 7;
+                    lastIndex = idxMiner;
+                    break;
+                }
+                case ARCHON: {
+                    rc.writeSharedArray(this.idxArchon, encoding);
+                    idxArchon = (idxArchon + 1) % 14;
+                    if (idxArchon == 0) {
+                        idxArchon = 7;
+                    }
+                    lastIndex = idxArchon;
+                    break;
+                }
+                case BUILDER: {
+                    rc.writeSharedArray(this.idxBuilder, encoding);
+                    idxBuilder = (idxBuilder + 1) % 21;
+                    if (idxBuilder == 0) {
+                        idxBuilder = 14;
+                    }
+                    lastIndex = idxBuilder;
+                    break;
+                }
+                case LABORATORY: {
+                    rc.writeSharedArray(this.idxLaboratory, encoding);
+                    idxLaboratory = (idxLaboratory + 1) % 28;
+                    if (idxLaboratory == 0) {
+                        idxLaboratory = 21;
+                    }
+                    lastIndex = idxLaboratory;
+                    break;
+                }
+                case SAGE: {
+                    rc.writeSharedArray(this.idxSage, encoding);
+                    idxSage = (idxSage + 1) % 35;
+                    if (idxSage == 0) {
+                        idxSage = 28;
+                    }
+                    lastIndex = idxSage;
+                    break;
+                }
+                case SOLDIER: {
+                    rc.writeSharedArray(this.idxSoldier, encoding);
+                    idxSoldier = (idxSoldier + 1) % 42;
+                    if (idxSoldier == 0) {
+                        idxSoldier = 35;
+                    }
+                    lastIndex = idxSoldier;
+                    break;
+                }
+                case WATCHTOWER: {
+                    rc.writeSharedArray(this.idxWatchtower, encoding);
+                    idxWatchtower = (idxWatchtower + 1) % 49;
+                    if (idxWatchtower == 0) {
+                        idxWatchtower = 42;
+                    }
+                    lastIndex = idxWatchtower;
+                    break;
+                }
+                default: {
+                    throw new RuntimeException("Should not be here");
+                }
             }
         }
-
     }
 
     @Override
@@ -149,10 +172,10 @@ public class BetterCommunicator implements Communicator {
         }
     }
 
-    /* | data | messageType | timestamp | length of data | */
+    /* | data | messageType | expiration | timestamp | entity | length of data | */
     // add to message length of data
-    private static int encode(Message message) {
-        int encoding = 0;
+    private static long encode(Message message) {
+        long encoding = 0;
 
         // append data encoding
         switch (message.messageType) {
@@ -167,29 +190,40 @@ public class BetterCommunicator implements Communicator {
         // append MessageType encoding
         encoding = append(encoding, message.messageType.encode(), MESSAGE_TYPE_BIT_LENGTH);
 
+        encoding = append(encoding, message.getExpirationTime(), EXPIRATION_TIME_BIT_LENGTH);
+
+        encoding = append(encoding, message.getTimeStamp(), TIMESTAMP_BIT_LENGTH);
+
         // append Entity encoding
-        // encoding = append(encoding, message.entity.encode(), ENTITY_BIT_LENGTH);
+        encoding = append(encoding, message.entity.encode(), ENTITY_BIT_LENGTH);
 
         return encoding;
     }
 
     public static Optional<Message> decode(int encoding) {
-        // extract Entity encoding
-        // int entityEncoding = encoding & getBitMask(ENTITY_BIT_LENGTH);
-        // Optional<Entity> entity = Entity.decode(entityEncoding);
-        // encoding = encoding >> ENTITY_BIT_LENGTH;
-        // if (!entity.isPresent()) {
-        //    return Optional.empty();
-        // }
+        int messageLength = encoding & getBitMask(ENTITY_BIT_LENGTH);
+        Optional<Entity> entity = Entity.decode(entityEncoding);
+        encoding = encoding >> ENTITY_BIT_LENGTH;
+        if (!entity.isPresent()) {
+            return Optional.empty();
+        }
 
-        Optional<Entity> entity = Optional.empty();
-        if (lastIndex >= 0 && lastIndex < 7) entity = Optional.of(Entity.ALL_MINERS);
-        if (lastIndex >= 7 && lastIndex < 14) entity = Optional.of(Entity.ALL_ARCHONS);
-        if (lastIndex >= 14 && lastIndex < 21) entity = Optional.of(Entity.ALL_BUILDERS);
-        if (lastIndex >= 21 && lastIndex < 28) entity = Optional.of(Entity.ALL_LABORATORIES);
-        if (lastIndex >= 28 && lastIndex < 35) entity = Optional.of(Entity.ALL_SAGES);
-        if (lastIndex >= 35 && lastIndex < 42) entity = Optional.of(Entity.ALL_SOLDIERS);
-        if (lastIndex >= 42 && lastIndex < 49) entity = Optional.of(Entity.ALL_WATCHTOWERS);
+         //extract Entity encoding
+         int entityEncoding = encoding & getBitMask(ENTITY_BIT_LENGTH);
+         Optional<Entity> entity = Entity.decode(entityEncoding);
+         encoding = encoding >> ENTITY_BIT_LENGTH;
+         if (!entity.isPresent()) {
+            return Optional.empty();
+         }
+
+//        Optional<Entity> entity = Optional.empty();
+//        if (lastIndex >= 0 && lastIndex < 7) entity = Optional.of(Entity.ALL_MINERS);
+//        if (lastIndex >= 7 && lastIndex < 14) entity = Optional.of(Entity.ALL_ARCHONS);
+//        if (lastIndex >= 14 && lastIndex < 21) entity = Optional.of(Entity.ALL_BUILDERS);
+//        if (lastIndex >= 21 && lastIndex < 28) entity = Optional.of(Entity.ALL_LABORATORIES);
+//        if (lastIndex >= 28 && lastIndex < 35) entity = Optional.of(Entity.ALL_SAGES);
+//        if (lastIndex >= 35 && lastIndex < 42) entity = Optional.of(Entity.ALL_SOLDIERS);
+//        if (lastIndex >= 42 && lastIndex < 49) entity = Optional.of(Entity.ALL_WATCHTOWERS);
 
 
 
@@ -227,7 +261,7 @@ public class BetterCommunicator implements Communicator {
         return Optional.of(message);
     }
 
-    private static int append(int encoding1, int encoding2, int encoding2Length) {
+    private static long append(long encoding1, int encoding2, int encoding2Length) {
         return (encoding1 << encoding2Length) | encoding2;
     }
 

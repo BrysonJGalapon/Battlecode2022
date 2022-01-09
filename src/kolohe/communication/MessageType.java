@@ -17,6 +17,7 @@ public enum MessageType {
     ENEMY_LABORATORY_LOCATION(11),
     ENEMY_WATCHTOWER_LOCATION(12),
     ALLY_LABORATORY_LOCATION(13), // ally types
+    ALLY_ARCHON_STATE(14),
 
 
 
