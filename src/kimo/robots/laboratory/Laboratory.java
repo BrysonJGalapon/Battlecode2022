@@ -5,7 +5,6 @@ import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import kimo.communication.Communicator;
 import kimo.communication.advanced.AdvancedCommunicator;
-import kimo.communication.basic.BasicCommunicator;
 import kimo.resource.allocation.ResourceAllocation;
 import kimo.state.machine.StateMachine;
 import kimo.state.machine.Stimulus;

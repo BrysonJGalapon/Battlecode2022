@@ -143,7 +143,7 @@ public class AdvancedCommunicator implements Communicator {
         switch (message.messageType) {
             case GOLD_LOCATION:
             case LEAD_LOCATION:
-            case NO_RESOURCES_LOCATION:
+//            case NO_RESOURCES_LOCATION:
             case BUILD_WATCHTOWER_LOCATION:
             case BUILD_LABORATORY_LOCATION:
             case SOLDIER_TARGET_LOCATION:
@@ -185,7 +185,7 @@ public class AdvancedCommunicator implements Communicator {
         switch (messageType.get()) {
             case LEAD_LOCATION:
             case GOLD_LOCATION:
-            case NO_RESOURCES_LOCATION:
+//            case NO_RESOURCES_LOCATION:
             case BUILD_WATCHTOWER_LOCATION:
             case BUILD_LABORATORY_LOCATION:
             case SOLDIER_TARGET_LOCATION:

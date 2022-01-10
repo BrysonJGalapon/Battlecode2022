@@ -38,7 +38,7 @@ public enum MinerState implements State {
 
                 if (!Miner.isAnyResourceInView(rc, stimulus.archonLocations)) {
                     // let other miners know that there are no more resources here
-                    Miner.communicator.sendMessage(rc, Message.buildSimpleLocationMessage(MessageType.NO_RESOURCES_LOCATION, stimulus.myLocation, Entity.ALL_MINERS));
+//                    Miner.communicator.sendMessage(rc, Message.buildSimpleLocationMessage(MessageType.NO_RESOURCES_LOCATION, stimulus.myLocation, Entity.ALL_MINERS));
 
                     // see if other miners found any other resource locations
                     nextResourceLocation = Miner.getClosestBroadcastedResourceLocation(stimulus.myLocation, stimulus.messages);
@@ -106,7 +106,8 @@ public enum MinerState implements State {
                     int gold = rc.senseGold(Miner.getTargetLocation());
                     if (lead == 0 && gold == 0) {
                         // let other miners know there are no resources here
-                        Miner.communicator.sendMessage(rc, Message.buildSimpleLocationMessage(MessageType.NO_RESOURCES_LOCATION, stimulus.myLocation, Entity.ALL_MINERS));
+//                        Miner.communicator.sendMessage(rc, Message.buildSimpleLocationMessage(MessageType.NO_RESOURCES_LOCATION, stimulus.myLocation, Entity.ALL_MINERS));
+                        return EXPLORE;
                     }
                 }
 

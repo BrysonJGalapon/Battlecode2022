@@ -7,6 +7,8 @@ import kimo.state.machine.Stimulus;
 
 import java.util.Optional;
 
+import static kimo.RobotPlayer.ROBOT_ID;
+import static kimo.RobotPlayer.TEST_ROBOT_ID;
 import static kimo.utils.Parameters.*;
 
 public enum ArchonState implements State {
@@ -56,7 +58,9 @@ public enum ArchonState implements State {
         int archonCount = rc.getArchonCount();
         int averageRobotCountPerArchon = robotCount / archonCount;
 
-//        System.out.println("Average Robot Count per Archon: " + averageRobotCountPerArchon);
+        if (ROBOT_ID == TEST_ROBOT_ID) {
+            System.out.println("Average Robot Count per Archon: " + averageRobotCountPerArchon);
+        }
 
         int roundNum = rc.getRoundNum();
 
@@ -80,14 +84,23 @@ public enum ArchonState implements State {
                     return SURVIVE;
                 }
 
+                if (ROBOT_ID == TEST_ROBOT_ID) {
+                    System.out.println("number of surrounding labs: " + Archon.getNumberOfSurroundingLaboratories(rc));
+                }
+
+                if (ROBOT_ID == TEST_ROBOT_ID) {
+                    System.out.println("number of surrounding watchtowers: " + Archon.getNumberOfSurroundingWatchtowers(rc));
+                }
+
+
                 if (averageRobotCountPerArchon < ARCHON_DEFEND_TO_RESOURCE_COLLECTION_ROBOT_COUNT_THRESHOLD) {
                     Archon.buildDistribution = ARCHON_RESOURCE_COLLECTION_BUILD_DISTRIBUTION;
                     return RESOURCE_COLLECTION;
                 }
 
                 if (averageRobotCountPerArchon > ARCHON_DEFEND_TO_ATTACK_ROBOT_COUNT_THRESHOLD
-                        && Archon.getNumberOfSurroundingLaboratories(rc) >= 2
-                        && Archon.getNumberOfSurroundingWatchtowers(rc) >= 4) {
+                        && Archon.getNumberOfSurroundingLaboratories(rc) >= 1
+                        && Archon.getNumberOfSurroundingWatchtowers(rc) >= 1) {
                     Archon.buildDistribution = ARCHON_ATTACK_BUILD_DISTRIBUTION;
                     return ATTACK;
                 }

@@ -55,6 +55,11 @@ public enum BuilderState implements State {
                 MapLocation patrolLocation = Builder.getPatrolLocation(primaryArchonLocation.get());
                 Builder.patrolLocation = patrolLocation;
 
+                // too close to the archon, move away
+                if (rc.getLocation().isWithinDistanceSquared(primaryArchonLocation.get(), 32)) {
+                    return PATROL;
+                }
+
                 // need to get closer to the patrol location
                 if (!rc.canSenseLocation(patrolLocation)) {
                     return PATROL;
@@ -65,14 +70,14 @@ public enum BuilderState implements State {
 
                 if (robotAtPatrolLocation == null) {
                     // robot not at location -- it must have died, or moved
-                    Builder.incrementPatrolIndex();
+                    Builder.incrementPatrolIndex(primaryArchonLocation.get(), rc);
                     Builder.patrolLocation = Builder.getPatrolLocation(primaryArchonLocation.get());
                     return PATROL;
                 }
 
                 if (!robotAtPatrolLocation.getType().isBuilding()) {
                     // robot not at location -- it must have died, or moved
-                    Builder.incrementPatrolIndex();
+                    Builder.incrementPatrolIndex(primaryArchonLocation.get(), rc);
                     Builder.patrolLocation = Builder.getPatrolLocation(primaryArchonLocation.get());
                     return PATROL;
                 }
@@ -100,7 +105,7 @@ public enum BuilderState implements State {
                 }
 
                 // this building looks good, move on to the next patrol location
-                Builder.incrementPatrolIndex();
+                Builder.incrementPatrolIndex(primaryArchonLocation.get(), rc);
                 Builder.patrolLocation = Builder.getPatrolLocation(primaryArchonLocation.get());
                 return PATROL;
             case BUILD:
@@ -126,7 +131,7 @@ public enum BuilderState implements State {
                 }
 
                 // no other build locations are being broadcasted, go on patrol
-                Builder.incrementPatrolIndex();
+                Builder.incrementPatrolIndex(primaryArchonLocation.get(), rc);
                 Builder.patrolLocation = Builder.getPatrolLocation(primaryArchonLocation.get());
                 return PATROL;
             case REPAIR:
@@ -138,14 +143,14 @@ public enum BuilderState implements State {
                 RobotInfo robotAtRepairLocation = rc.senseRobotAtLocation(Builder.repairLocation);
                 if (robotAtRepairLocation == null) {
                     // robot not at location -- it must have died, or moved
-                    Builder.incrementPatrolIndex();
+                    Builder.incrementPatrolIndex(primaryArchonLocation.get(), rc);
                     Builder.patrolLocation = Builder.getPatrolLocation(primaryArchonLocation.get());
                     return PATROL;
                 }
 
                 if (!robotAtRepairLocation.getType().isBuilding()) {
                     // robot not at location -- it must have died, or moved
-                    Builder.incrementPatrolIndex();
+                    Builder.incrementPatrolIndex(primaryArchonLocation.get(), rc);
                     Builder.patrolLocation = Builder.getPatrolLocation(primaryArchonLocation.get());
                     return PATROL;
                 }
@@ -156,7 +161,7 @@ public enum BuilderState implements State {
 
                 if (health == maxHealth) {
                     // robot is already at max health, go back to patrolling
-                    Builder.incrementPatrolIndex();
+                    Builder.incrementPatrolIndex(primaryArchonLocation.get(), rc);
                     Builder.patrolLocation = Builder.getPatrolLocation(primaryArchonLocation.get());
                     return PATROL;
                 }
@@ -170,17 +175,17 @@ public enum BuilderState implements State {
                     return MUTATE;
                 }
 
-                RobotInfo robotAtMutateLocation = rc.senseRobotAtLocation(Builder.repairLocation);
+                RobotInfo robotAtMutateLocation = rc.senseRobotAtLocation(Builder.mutateLocation);
                 if (robotAtMutateLocation == null) {
                     // robot not at location -- it must have died, or moved
-                    Builder.incrementPatrolIndex();
+                    Builder.incrementPatrolIndex(primaryArchonLocation.get(), rc);
                     Builder.patrolLocation = Builder.getPatrolLocation(primaryArchonLocation.get());
                     return PATROL;
                 }
 
                 if (!robotAtMutateLocation.getType().isBuilding()) {
                     // robot not at location -- it must have died, or moved
-                    Builder.incrementPatrolIndex();
+                    Builder.incrementPatrolIndex(primaryArchonLocation.get(), rc);
                     Builder.patrolLocation = Builder.getPatrolLocation(primaryArchonLocation.get());
                     return PATROL;
                 }
@@ -197,7 +202,7 @@ public enum BuilderState implements State {
 
                 if (robotLevel == 3) {
                     // robots at level 3 can not be mutated
-                    Builder.incrementPatrolIndex();
+                    Builder.incrementPatrolIndex(primaryArchonLocation.get(), rc);
                     return PATROL;
                 }
 
@@ -211,7 +216,7 @@ public enum BuilderState implements State {
                     return MUTATE;
                 }
 
-                Builder.incrementPatrolIndex();
+                Builder.incrementPatrolIndex(primaryArchonLocation.get(), rc);
                 return PATROL;
 
             default: throw new RuntimeException("Should not be here");

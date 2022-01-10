@@ -6,7 +6,6 @@ import kimo.communication.Entity;
 import kimo.communication.Message;
 import kimo.communication.MessageType;
 import kimo.communication.advanced.AdvancedCommunicator;
-import kimo.communication.basic.BasicCommunicator;
 import kimo.pathing.Explore;
 import kimo.pathing.pathfinder.Fuzzy;
 import kimo.pathing.pathfinder.PathFinder;

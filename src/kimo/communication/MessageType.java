@@ -5,7 +5,7 @@ import java.util.Optional;
 public enum MessageType {
     LEAD_LOCATION(1),
     GOLD_LOCATION(2),
-    NO_RESOURCES_LOCATION(3),
+//    NO_RESOURCES_LOCATION(3),
     BUILD_WATCHTOWER_LOCATION(4),
     BUILD_LABORATORY_LOCATION(5),
     ARCHON_STATE(6),

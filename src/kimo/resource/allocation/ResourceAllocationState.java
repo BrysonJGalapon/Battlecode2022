@@ -61,7 +61,7 @@ public enum ResourceAllocationState implements State {
         }
 
         // check message list for archon state messages that match the closest archon location
-        for (Message message : stimulus.messages) {
+        for (Message message : stimulus.archonStateMessages) {
             if (!message.messageType.equals(MessageType.ARCHON_STATE)) {
                 continue;
             }

@@ -4,7 +4,9 @@ import battlecode.common.*;
 import kimo.communication.Communicator;
 import kimo.communication.Message;
 import kimo.communication.advanced.AdvancedCommunicator;
+import kimo.pathing.Circle;
 import kimo.pathing.Explore;
+import kimo.pathing.RotationPreference;
 import kimo.pathing.pathfinder.Fuzzy;
 import kimo.pathing.pathfinder.PathFinder;
 import kimo.resource.allocation.ResourceAllocation;
@@ -18,8 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static battlecode.common.RobotMode.PROTOTYPE;
-import static kimo.RobotPlayer.MY_TEAM;
-import static kimo.RobotPlayer.ROBOT_TYPE;
+import static kimo.RobotPlayer.*;
 import static kimo.resource.allocation.ResourceAllocation.getClosestBroadcastedArchonLocation;
 import static kimo.utils.Parameters.BUILDER_RECEIVE_MESSAGE_BYTECODE_LIMIT;
 import static kimo.utils.Parameters.BUILDER_RECEIVE_MESSAGE_LIMIT;
@@ -34,9 +35,10 @@ import static kimo.utils.Utils.*;
  */
 public class Builder {
     private static final StateMachine<kimo.robots.builder.BuilderState> stateMachine = StateMachine.startingAt(BuilderState.PATROL);
-    private static final PathFinder pathFinder = new Fuzzy();
+    private static final Fuzzy pathFinder = new Fuzzy();
     private static final Explore explorer = new Explore();
-    public static final Communicator communicator = new AdvancedCommunicator();
+    private static final Circle circler = new Circle();
+    public static final AdvancedCommunicator communicator = new AdvancedCommunicator();
     public static final ResourceAllocation resourceAllocation = new ResourceAllocation();
 
     // state
@@ -69,8 +71,11 @@ public class Builder {
         return primaryArchonLocation.translate(parolDelta[0], parolDelta[1]);
     }
 
-    public static void incrementPatrolIndex() {
+    public static void incrementPatrolIndex(MapLocation primaryArchonLocation, RobotController rc) throws GameActionException {
         patrolIndex = (patrolIndex + 1) % patrolDeltas.length;
+        while (!Utils.onTheMap(getPatrolLocation(primaryArchonLocation))) {
+            patrolIndex = (patrolIndex + 1) % patrolDeltas.length;
+        }
     }
 
     private static Stimulus collectStimulus(RobotController rc) throws GameActionException {
@@ -79,7 +84,7 @@ public class Builder {
         s.friendlyNearbyRobotsInfo = rc.senseNearbyRobots(ROBOT_TYPE.visionRadiusSquared, MY_TEAM);
         s.friendlyAdjacentNearbyRobotsInfo = rc.senseNearbyRobots(2, MY_TEAM);
         s.messages = communicator.receiveMessages(rc, BUILDER_RECEIVE_MESSAGE_LIMIT, BUILDER_RECEIVE_MESSAGE_BYTECODE_LIMIT);
-
+        s.archonStateMessages = communicator.receiveArchonStateMessages(rc);
         return s;
     }
 
@@ -147,6 +152,10 @@ public class Builder {
 
         resourceAllocation.run(rc, stimulus);
         double leadAllowance = resourceAllocation.getLeadAllowance(rc, ROBOT_TYPE);
+        if (ROBOT_ID == TEST_ROBOT_ID) {
+            System.out.println("My lead allowance is: " + leadAllowance);
+        }
+
         leadBudget += leadAllowance;
         double goldAllowance = resourceAllocation.getGoldAllowance(rc, ROBOT_TYPE);
         goldBudget += goldAllowance;
@@ -172,8 +181,6 @@ public class Builder {
             throw new RuntimeException("Should not be here");
         }
 
-        rc.setIndicatorLine(stimulus.myLocation, buildLocation, 0, 0, 255);
-
         // if the build location is too far away to sense, get closer
         if (!rc.canSenseLocation(buildLocation)) {
             Optional<Direction> direction = pathFinder.findPath(stimulus.myLocation, buildLocation, rc);
@@ -186,6 +193,11 @@ public class Builder {
         // don't clog up the build location
         if (stimulus.myLocation.equals(buildLocation)) {
             tryMoveRandomDirection(rc);
+        }
+
+        if (ROBOT_ID == TEST_ROBOT_ID) {
+            System.out.println("I want to build a: " + robotToBuild);
+            System.out.println("My budget is: " + leadBudget);
         }
 
         // check if the robot we are attempting to build has already been built and is in PROTOTYPE mode
@@ -240,8 +252,12 @@ public class Builder {
     }
 
     public static void runPatrolActions(RobotController rc, Stimulus stimulus) throws GameActionException {
-        // move towards the patrol location
-        Optional<Direction> direction = pathFinder.findPath(rc.getLocation(), Builder.patrolLocation, rc);
+        // circle around the archon
+        circler.setCenter(primaryArchonLocation);
+        circler.setInnerRadiusSquared(32);
+        circler.setOuterRadiusSquared(72);
+
+        Optional<Direction> direction = circler.circle(rc, stimulus.myLocation);
         if (direction.isPresent()) {
             tryMove(rc, direction.get());
         }

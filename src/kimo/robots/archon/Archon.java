@@ -4,7 +4,6 @@ import battlecode.common.*;
 import kimo.communication.Communicator;
 import kimo.communication.Message;
 import kimo.communication.advanced.AdvancedCommunicator;
-import kimo.communication.basic.BasicCommunicator;
 import kimo.resource.allocation.ResourceAllocation;
 import kimo.state.machine.StateMachine;
 import kimo.state.machine.Stimulus;
@@ -180,7 +179,7 @@ public class Archon {
             if (rc.onTheMap(watchtowerLocation)) {
                 // check if a laboratory is already there, and if not then tell builders to build there
                 RobotInfo robot = rc.senseRobotAtLocation(watchtowerLocation);
-                if (robot != null && robot.getTeam().equals(MY_TEAM) && robot.getType().equals(RobotType.LABORATORY)) {
+                if (robot != null && robot.getTeam().equals(MY_TEAM) && robot.getType().equals(RobotType.WATCHTOWER)) {
                     count += 1;
                 }
             }

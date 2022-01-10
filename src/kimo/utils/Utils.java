@@ -1,16 +1,12 @@
 package kimo.utils;
 
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.RobotController;
-import battlecode.common.RobotType;
+import battlecode.common.*;
 import kimo.pathing.RotationPreference;
 
 import java.util.Optional;
 import java.util.Random;
 
-import static kimo.RobotPlayer.BIRTH_YEAR;
-import static kimo.RobotPlayer.ROBOT_ID;
+import static kimo.RobotPlayer.*;
 import static kimo.pathing.RotationPreference.getRandomConcreteRotationPreference;
 
 public class Utils {
@@ -39,6 +35,14 @@ public class Utils {
         }
 
         return RNG;
+    }
+
+    public static boolean onTheMap(MapLocation loc) {
+        return 0 <= loc.x && loc.x < MAP_WIDTH && 0 <= loc.y && loc.y < MAP_HEIGHT;
+    }
+
+    public static MapLocation getMapCenter() {
+        return new MapLocation(MAP_WIDTH / 2, MAP_HEIGHT / 2);
     }
 
     public static <T> T getRandomValueFrom(T[] arr) {

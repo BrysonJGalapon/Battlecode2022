@@ -28,11 +28,13 @@ public class ResourceAllocation {
         if (leadProfit < 0) {
             return 0;
         }
+
+        int percent = leadLimitDistribution[getIndexInDistribution(robotType)];
         if (ROBOT_ID == TEST_ROBOT_ID) {
             System.out.println("My lead profit this turn: " + leadProfit);
+            System.out.println("My lead profit percent this turn: " + percent);
         }
-        int percent = leadLimitDistribution[getIndexInDistribution(robotType)];
-        return (1.0 * leadProfit * percent / 100) / getArchonCount(rc) * RESOURCE_ALLOCATION_RESOURCE_OVERLAP_FACTOR;
+        return ((1.0 * leadProfit * percent / 100.0) / getArchonCount(rc)) * RESOURCE_ALLOCATION_RESOURCE_OVERLAP_FACTOR;
     }
 
     public double getGoldAllowance(RobotController rc, RobotType robotType) {
@@ -40,11 +42,11 @@ public class ResourceAllocation {
         if (goldProfit < 0) {
             return 0;
         }
-        if (ROBOT_ID == TEST_ROBOT_ID) {
-            System.out.println("My gold profit this turn: " + goldProfit);
-        }
+//        if (ROBOT_ID == TEST_ROBOT_ID) {
+//            System.out.println("My gold profit this turn: " + goldProfit);
+//        }
         int percent = goldLimitDistribution[getIndexInDistribution(robotType)];
-        return (1.0 * goldProfit * percent / 100) / getArchonCount(rc) * RESOURCE_ALLOCATION_RESOURCE_OVERLAP_FACTOR;
+        return ((1.0 * goldProfit * percent / 100) / getArchonCount(rc)) * RESOURCE_ALLOCATION_RESOURCE_OVERLAP_FACTOR;
     }
 
     public void setLeadLimitDistribution(int[] leadLimitDistribution) {
@@ -66,7 +68,9 @@ public class ResourceAllocation {
 
     public void run(RobotController rc, Stimulus stimulus) throws GameActionException {
         stateMachine.transition(stimulus, rc);
-//        System.out.println("Resource Allocation in state: " + stateMachine.getCurrState());
+        if (ROBOT_ID == TEST_ROBOT_ID) {
+            System.out.println("Resource Allocation in state: " + stateMachine.getCurrState());
+        }
         switch (stateMachine.getCurrState()) {
             case RESOURCE_COLLECTION:
                 setLeadLimitDistribution(RESOURCE_ALLOCATION_RESOURCE_COLLECTION_LEAD_DISTIBUTION);
