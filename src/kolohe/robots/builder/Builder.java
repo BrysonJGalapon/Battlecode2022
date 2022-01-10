@@ -6,11 +6,14 @@ import kolohe.communication.Message;
 import kolohe.communication.MessageType;
 import kolohe.communication.advanced.AdvancedCommunicator;
 import kolohe.communication.basic.BasicCommunicator;
+import kolohe.pathing.Explore;
 import kolohe.pathing.pathfinder.Fuzzy;
 import kolohe.pathing.pathfinder.PathFinder;
 import kolohe.resource.allocation.ResourceAllocation;
 import kolohe.state.machine.StateMachine;
 import kolohe.state.machine.Stimulus;
+import kolohe.utils.Tuple;
+import kolohe.utils.Utils;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,8 +23,7 @@ import static kolohe.RobotPlayer.*;
 import static kolohe.resource.allocation.ResourceAllocation.getClosestBroadcastedArchonLocation;
 import static kolohe.utils.Parameters.BUILDER_RECEIVE_MESSAGE_BYTECODE_LIMIT;
 import static kolohe.utils.Parameters.BUILDER_RECEIVE_MESSAGE_LIMIT;
-import static kolohe.utils.Utils.getAge;
-import static kolohe.utils.Utils.tryMoveRandomDirection;
+import static kolohe.utils.Utils.*;
 
 /*
     - can build buildings (watchtowers or laboratories)
@@ -31,22 +33,50 @@ import static kolohe.utils.Utils.tryMoveRandomDirection;
     - bytecode limit: 7,500
  */
 public class Builder {
-    private static final StateMachine<BuilderState> stateMachine = StateMachine.startingAt(BuilderState.START);
+    private static final StateMachine<BuilderState> stateMachine = StateMachine.startingAt(BuilderState.PATROL);
     private static final PathFinder pathFinder = new Fuzzy();
-//    public static final Communicator communicator = new BasicCommunicator();
+    private static final Explore explorer = new Explore();
     public static final Communicator communicator = new AdvancedCommunicator();
     public static final ResourceAllocation resourceAllocation = new ResourceAllocation();
 
     // state
     public static MapLocation buildLocation; // the location to build the next building
     public static RobotType robotToBuild; // the type of building to build (laboratory or watchtower)
-    private static MapLocation primaryArchonLocation; // the location of the archon that this builder is following
+
+    public static MapLocation repairLocation;
+    public static MapLocation mutateLocation;
+
+    public static MapLocation patrolLocation;
+    public static int patrolIndex = 0;
+    public static int[][] patrolDeltas = new int[][]{
+      new int[]{0, 4},  // north laboratory
+      new int[]{3, 3},  // north-east watchtower
+      new int[]{4, 0}, // east laboratory
+      new int[]{3, -3}, // south-east watchtower
+      new int[]{0, -4}, // south laboratory
+      new int[]{-3, -3}, // south-west watchtower
+      new int[]{-4, 0}, // west laboratory
+      new int[]{-3, 3}, // north-west watchtower
+    };
+
+    public static MapLocation primaryArchonLocation; // the location of the archon that this builder is following
 
     public static double leadBudget = 0;
+    public static double goldBudget = 0;
+
+    public static MapLocation getPatrolLocation(MapLocation primaryArchonLocation) {
+        int[] parolDelta = patrolDeltas[patrolIndex];
+        return primaryArchonLocation.translate(parolDelta[0], parolDelta[1]);
+    }
+
+    public static void incrementPatrolIndex() {
+        patrolIndex = (patrolIndex + 1) % patrolDeltas.length;
+    }
 
     private static Stimulus collectStimulus(RobotController rc) throws GameActionException {
         Stimulus s = new Stimulus();
         s.myLocation = rc.getLocation();
+        s.friendlyNearbyRobotsInfo = rc.senseNearbyRobots(ROBOT_TYPE.visionRadiusSquared, MY_TEAM);
         s.friendlyAdjacentNearbyRobotsInfo = rc.senseNearbyRobots(2, MY_TEAM);
         s.messages = communicator.receiveMessages(rc, BUILDER_RECEIVE_MESSAGE_LIMIT, BUILDER_RECEIVE_MESSAGE_BYTECODE_LIMIT);
 
@@ -107,14 +137,33 @@ public class Builder {
             return; // lots of bytecode is used to initialize the advanced communicator, so don't do anything on this turn
         }
 
+        if (primaryArchonLocation != null) {
+            rc.setIndicatorLine(rc.getLocation(), primaryArchonLocation, 0, 0, 255);
+        }
+
         Stimulus stimulus = collectStimulus(rc);
         stateMachine.transition(stimulus, rc);
         rc.setIndicatorString(String.format("state: %s", stateMachine.getCurrState()));
 
+        resourceAllocation.run(rc, stimulus);
+        double leadAllowance = resourceAllocation.getLeadAllowance(rc, ROBOT_TYPE);
+        leadBudget += leadAllowance;
+        double goldAllowance = resourceAllocation.getGoldAllowance(rc, ROBOT_TYPE);
+        goldBudget += goldAllowance;
+
         switch (stateMachine.getCurrState()) {
+            case ORPHAN: runOrphanActions(rc, stimulus); break;
+            case PATROL: runPatrolActions(rc, stimulus); break;
             case BUILD: runBuildActions(rc, stimulus); break;
             case REPAIR: runRepairActions(rc, stimulus); break;
+            case MUTATE: runMutateActions(rc, stimulus); break;
             default: throw new RuntimeException("Should not be here");
+        }
+    }
+    public static void runOrphanActions(RobotController rc, Stimulus stimulus) throws GameActionException {
+        Optional<Direction> direction = explorer.explore(rc.getLocation(), rc);
+        if (direction.isPresent()) {
+            Utils.tryMove(rc, direction.get());
         }
     }
 
@@ -158,9 +207,6 @@ public class Builder {
         // robot is close enough to build
         if (stimulus.myLocation.isAdjacentTo(buildLocation)) {
             // wait until have enough resources to build the robot
-            resourceAllocation.run(rc, stimulus);
-            double leadAllowance = resourceAllocation.getLeadAllowance(rc, ROBOT_TYPE);
-            leadBudget += leadAllowance;
             if (robotToBuild.buildCostLead > leadBudget) {
                 return;
             }
@@ -179,17 +225,59 @@ public class Builder {
     }
 
     public static void runRepairActions(RobotController rc, Stimulus stimulus) throws GameActionException {
-        tryMoveRandomDirection(rc);
+        // not close enough to repair location, move towards it
+        if (!stimulus.myLocation.isWithinDistanceSquared(Builder.repairLocation, ROBOT_TYPE.actionRadiusSquared)) {
+            Optional<Direction> direction = pathFinder.findPath(rc.getLocation(), Builder.repairLocation, rc);
+            if (direction.isPresent()) {
+                tryMove(rc, direction.get());
+            }
+        }
+
+        // repair the robot
+        if (rc.canRepair(Builder.repairLocation)) {
+            rc.repair(Builder.repairLocation);
+        }
     }
 
-    public static Optional<MapLocation> getAnyBroadcastedBuildingLocation(List<Message> messages) {
-        for (Message message : messages) {
-            // TODO once there is more space for messageType bits, add another filter for 'BUILD_LABORATORY_LOCATION' messages
-            if (!message.messageType.equals(MessageType.BUILD_WATCHTOWER_LOCATION)) {
-                continue;
-            }
+    public static void runPatrolActions(RobotController rc, Stimulus stimulus) throws GameActionException {
+        // move towards the patrol location
+        Optional<Direction> direction = pathFinder.findPath(rc.getLocation(), Builder.patrolLocation, rc);
+        if (direction.isPresent()) {
+            tryMove(rc, direction.get());
+        }
+    }
 
-            return Optional.of(message.location);
+    public static void runMutateActions(RobotController rc, Stimulus stimulus) throws GameActionException {
+        // not close enough to mutate location, move towards it
+        if (!stimulus.myLocation.isWithinDistanceSquared(Builder.mutateLocation, ROBOT_TYPE.actionRadiusSquared)) {
+            Optional<Direction> direction = pathFinder.findPath(rc.getLocation(), Builder.mutateLocation, rc);
+            if (direction.isPresent()) {
+                tryMove(rc, direction.get());
+            }
+        }
+
+        // mutate
+        if (rc.canMutate(Builder.mutateLocation)) {
+            rc.mutate(Builder.mutateLocation);
+        }
+    }
+
+    public static Optional<Tuple<RobotType, MapLocation>> getAnyBroadcastedBuildingLocation(List<Message> messages) {
+        for (Message message : messages) {
+            switch (message.messageType) {
+                case BUILD_LABORATORY_LOCATION:
+                    // only listen to the primary archon's broadcasted messages
+                    if (primaryArchonLocation != null && message.location.isWithinDistanceSquared(primaryArchonLocation, 32)) {
+                        return Optional.of(Tuple.of(RobotType.LABORATORY, message.location));
+                    }
+                    break;
+                case BUILD_WATCHTOWER_LOCATION:
+                    // only listen to the primary archon's broadcasted messages
+                    if (primaryArchonLocation != null && message.location.isWithinDistanceSquared(primaryArchonLocation, 32)) {
+                        return Optional.of(Tuple.of(RobotType.WATCHTOWER, message.location));
+                    }
+                    break;
+            }
         }
 
         return Optional.empty();

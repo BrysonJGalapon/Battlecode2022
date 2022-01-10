@@ -62,7 +62,7 @@ public class AdvancedCommunicator implements Communicator {
     private static final Channel[] channels = getChannels();
 
     private int channelIdx = 0;
-    private int archonChannelIdx = 0;
+    private int archonChannelIdx = -1;
 
     private static Channel[] getChannels() {
         Channel[] channels = new Channel[(SHARED_ARRAY_LENGTH*SHARED_ARRAY_INDEX_BIT_LENGTH)/TOTAL_MESSAGE_BIT_LENGTH];
@@ -96,15 +96,12 @@ public class AdvancedCommunicator implements Communicator {
         int initialBytecodesLeft = Clock.getBytecodesLeft();
         List<Message> messages = new LinkedList<>();
 
-        int[] indices = new int[channels.length];
-        for (int i = 0; i < channels.length; i++) {
-            indices[i] = i;
+        int[] indices = new int[channels.length-NUM_RESERVED_ARCHON_STATE_CHANNELS];
+        for (int i = 0; i < channels.length-NUM_RESERVED_ARCHON_STATE_CHANNELS; i++) {
+            indices[i] = i+NUM_RESERVED_ARCHON_STATE_CHANNELS;
         }
 
-        for (int i = 0; i < channels.length; i++) {
-            if (ROBOT_ID == TEST_ROBOT_ID) {
-                System.out.println(String.format("bytecodes left: " + Clock.getBytecodesLeft()));
-            }
+        for (int i = 0; i < indices.length; i++) {
             if (initialBytecodesLeft-Clock.getBytecodesLeft() > bytecodeLimit) {
                 break;
             }
@@ -113,7 +110,7 @@ public class AdvancedCommunicator implements Communicator {
                 break;
             }
 
-            int j = i + getRng().nextInt(channels.length-i);
+            int j = i + getRng().nextInt(indices.length-i);
 
             // swap i, j indices
             int tmp = indices[i];
@@ -128,14 +125,7 @@ public class AdvancedCommunicator implements Communicator {
                 continue;
             }
 
-            Optional<Message> message;
-
-            // decode the message, based on the index
-            if (indexToRead < NUM_RESERVED_ARCHON_STATE_CHANNELS) {
-                message = decodeArchonStateMessage(encoding);
-            } else {
-                message = decode(encoding);
-            }
+            Optional<Message> message = decode(encoding);
 
             // load the message if current robot is a valid recipient of it
             if (message.isPresent() && isRecipientOfMessage(ROBOT_TYPE, message.get())) {
@@ -155,6 +145,7 @@ public class AdvancedCommunicator implements Communicator {
             case LEAD_LOCATION:
             case NO_RESOURCES_LOCATION:
             case BUILD_WATCHTOWER_LOCATION:
+            case BUILD_LABORATORY_LOCATION:
                 encoding = append(encoding, encodeMapLocation(message.location), MAP_LOCATION_BIT_LENGTH);
                 break;
             default: throw new RuntimeException("Should not be here");
@@ -211,8 +202,22 @@ public class AdvancedCommunicator implements Communicator {
 
     private void sendArchonStateMessage(RobotController rc, Message message) throws GameActionException {
         int encoding = encodeArchonStateMessage(message);
-        writeToChannel(rc, channels[this.archonChannelIdx], encoding);
-        this.archonChannelIdx = (this.archonChannelIdx + 1) % NUM_RESERVED_ARCHON_STATE_CHANNELS;
+        writeToChannel(rc, channels[getArchonChannelIdx(rc)], encoding);
+    }
+
+    private int getArchonChannelIdx(RobotController rc) throws GameActionException {
+        if (this.archonChannelIdx != -1) {
+            return this.archonChannelIdx;
+        }
+
+        for (int i = 0; i < NUM_RESERVED_ARCHON_STATE_CHANNELS; i++) {
+            if (readFromChannel(rc, channels[i]) == 0) {
+                this.archonChannelIdx = i;
+                return i;
+            }
+        }
+
+        throw new RuntimeException("Should not be here");
     }
 
     private static int getBit(int n, int k) {
@@ -345,5 +350,18 @@ public class AdvancedCommunicator implements Communicator {
 //            case ALL_WATCHTOWERS: return robotType.equals(RobotType.WATCHTOWER); // TODO not enough bits :(
             default: throw new RuntimeException("Should not be here");
         }
+    }
+
+    public List<Message> receiveArchonStateMessages(RobotController rc) throws GameActionException {
+        List<Message> archonStateMessages = new LinkedList<>();
+        for (int i = 0; i < NUM_RESERVED_ARCHON_STATE_CHANNELS; i++) {
+            int encoding = readFromChannel(rc, channels[i]);
+            Optional<Message> message = decodeArchonStateMessage(encoding);
+            if (message.isPresent()) {
+                archonStateMessages.add(message.get());
+            }
+        }
+
+        return archonStateMessages;
     }
 }

@@ -34,13 +34,21 @@ public class Miner {
     private static final StateMachine<MinerState> stateMachine = StateMachine.startingAt(MinerState.EXPLORE);
     private static final PathFinder pathFinder = new Fuzzy();
     private static final Explore explorer = new Explore();
-//    public static final Communicator communicator = new BasicCommunicator();
-    public static final Communicator communicator = new AdvancedCommunicator();
+    public static final AdvancedCommunicator communicator = new AdvancedCommunicator();
 
     // state
     private static MapLocation targetLocation; // the current target location for this robot
     public static MapLocation[] nearbyLocationsWithGold;
     public static MapLocation[] nearbyLocationsWithLead;
+
+    public static List<Tuple<MapLocation, Integer>> leadLocationsInView;
+    public static List<Tuple<MapLocation, Integer>> goldLocationsInView;
+    public static int leadLocationsInViewValidAge = -1;
+    public static int goldLocationsInViewValidAge = -1;
+
+    public static List<MapLocation> archonLocations;
+    public static int archonLocationsValidAge = -1;
+    private static int ARCHON_LOCATIONS_SHELF_LIFE = 100;
 
     private static Stimulus collectStimulus(RobotController rc) throws GameActionException {
         Stimulus s = new Stimulus();
@@ -49,7 +57,6 @@ public class Miner {
             System.out.println(String.format("== %s, %s: start collectStimulus", rc.getRoundNum(), Clock.getBytecodesLeft()));
         }
         s.myLocation = rc.getLocation();
-        s.enemyNearbyRobotsInfo = rc.senseNearbyRobots(ROBOT_TYPE.visionRadiusSquared, OPP_TEAM);
         s.nearbyLocationsWithGold = rc.senseNearbyLocationsWithGold(ROBOT_TYPE.visionRadiusSquared);
         s.nearbyLocationsWithLead = rc.senseNearbyLocationsWithLead(ROBOT_TYPE.visionRadiusSquared);
         if (ROBOT_ID == TEST_ROBOT_ID) {
@@ -60,7 +67,30 @@ public class Miner {
             System.out.println(String.format("== %s, %s: after receiveMessages", rc.getRoundNum(), Clock.getBytecodesLeft()));
         }
 
+        s.archonLocations = getArchonLocations(rc);
+
+        if (ROBOT_ID == TEST_ROBOT_ID) {
+            System.out.println(String.format("== %s, %s: after getArchonLocations", rc.getRoundNum(), Clock.getBytecodesLeft()));
+        }
+
         return s;
+    }
+
+    private static List<MapLocation> getArchonLocations(RobotController rc) throws GameActionException {
+        int age = getAge(rc);
+        if (age <= Miner.archonLocationsValidAge) {
+            return Miner.archonLocations;
+        }
+
+        List<MapLocation> archonLocations = new LinkedList<>();
+        List<Message> archonStateMessages = communicator.receiveArchonStateMessages(rc);
+        for (Message message : archonStateMessages) {
+            archonLocations.add(message.location);
+        }
+
+        Miner.archonLocations = archonLocations;
+        Miner.archonLocationsValidAge = age + ARCHON_LOCATIONS_SHELF_LIFE;
+        return archonLocations;
     }
 
     public static void run(RobotController rc) throws GameActionException {
@@ -68,15 +98,16 @@ public class Miner {
             return; // lots of bytecode is used to initialize the advanced communicator, so don't do anything on this turn
         }
 
-        if (ROBOT_ID == TEST_ROBOT_ID) {
-            System.out.println(String.format("%s, %s: start run", rc.getRoundNum(), Clock.getBytecodesLeft()));
-        }
+//        if (ROBOT_ID == TEST_ROBOT_ID) {
+//            System.out.println(String.format("%s, %s: start run", rc.getRoundNum(), Clock.getBytecodesLeft()));
+//        }
         Stimulus stimulus = collectStimulus(rc);
-        if (ROBOT_ID == TEST_ROBOT_ID) {
-            System.out.println(String.format("%s, %s: after stimulus", rc.getRoundNum(), Clock.getBytecodesLeft()));
-            System.out.println(String.format("I'm in state: %s", stateMachine.getCurrState()));
-        }
+//        if (ROBOT_ID == TEST_ROBOT_ID) {
+//            System.out.println(String.format("%s, %s: after stimulus", rc.getRoundNum(), Clock.getBytecodesLeft()));
+//            System.out.println(String.format("I'm in state: %s", stateMachine.getCurrState()));
+//        }
         stateMachine.transition(stimulus, rc);
+
         if (ROBOT_ID == TEST_ROBOT_ID) {
             System.out.println(String.format("%s, %s: after transition", rc.getRoundNum(), Clock.getBytecodesLeft()));
             System.out.println(String.format("I'm in state: %s", stateMachine.getCurrState()));
@@ -84,19 +115,31 @@ public class Miner {
         rc.setIndicatorString(String.format("state: %s", stateMachine.getCurrState()));
 
         switch (stateMachine.getCurrState()) {
-            case COLLECT:   runCollectActions(rc, stimulus); break;
+            case COLLECT: runCollectActions(rc, stimulus); break;
             case EXPLORE:   runExploreActions(rc, stimulus); break;
             case TARGET:    runTargetActions(rc, stimulus); break;
             default: throw new RuntimeException("Should not be here");
         }
-        if (ROBOT_ID == TEST_ROBOT_ID) {
-            System.out.println(String.format("%s, %s: after run actions", rc.getRoundNum(), Clock.getBytecodesLeft()));
-        }
+//        if (ROBOT_ID == TEST_ROBOT_ID) {
+//            System.out.println(String.format("%s, %s: after run actions", rc.getRoundNum(), Clock.getBytecodesLeft()));
+//        }
+    }
+
+    private static void runCheapCollectActions() {
+        // do nothing for now
     }
 
     public static void runCollectActions(RobotController rc, Stimulus stimulus) throws GameActionException {
+        if (Clock.getBytecodesLeft() < 4000) {
+            runCheapCollectActions();
+            return;
+        }
+
         // collect gold, if any
         List<Tuple<MapLocation, Integer>> goldLocationsInView = getGoldLocationsInView(rc);
+        if (ROBOT_ID == TEST_ROBOT_ID) {
+            System.out.println(String.format("%s, %s: after getGoldLocationsInView", rc.getRoundNum(), Clock.getBytecodesLeft()));
+        }
         if (goldLocationsInView.size() > 0) {
             // TODO decide location to go to as a function of gold quantity, instead of just distance
             MapLocation closestGoldLocation = getClosestResourceLocation(stimulus.myLocation, goldLocationsInView);
@@ -120,7 +163,11 @@ public class Miner {
         }
 
         // collect lead, if any
-        List<Tuple<MapLocation, Integer>> leadLocationsInView = getLeadLocationsInView(rc);
+        List<Tuple<MapLocation, Integer>> leadLocationsInView = getLeadLocationsInView(rc, stimulus.archonLocations);
+        if (ROBOT_ID == TEST_ROBOT_ID) {
+            System.out.println(String.format("%s, %s: after getLeadLocationsInView", rc.getRoundNum(), Clock.getBytecodesLeft()));
+            System.out.println(String.format("size is %s", leadLocationsInView.size()));
+        }
         if (leadLocationsInView.size() > 0) {
             // TODO decide location to go to as a function of lead quantity, instead of just distance
             MapLocation closestLeadLocation = getClosestResourceLocation(stimulus.myLocation, leadLocationsInView);
@@ -131,8 +178,15 @@ public class Miner {
 
             // lead is close enough to mine
             if (stimulus.myLocation.distanceSquaredTo(closestLeadLocation) < ROBOT_TYPE.actionRadiusSquared) {
-                while (rc.canMineLead(closestLeadLocation)) {
+                int leadToMine = rc.senseLead(closestLeadLocation);
+
+                if (isFarmableLocation(closestLeadLocation, stimulus.archonLocations)) {
+                    leadToMine -= 1; // farm the lead; don't mine all of it
+                }
+
+                while (rc.canMineLead(closestLeadLocation) && leadToMine > 0) {
                     rc.mineLead(closestLeadLocation);
+                    leadToMine -= 1;
                 }
             } else { // lead is not close enough to mine, so get closer
                 Optional<Direction> direction = pathFinder.findPath(stimulus.myLocation, closestLeadLocation, rc);
@@ -143,6 +197,16 @@ public class Miner {
 
             return;
         }
+    }
+
+    private static boolean isFarmableLocation(MapLocation leadLocation, List<MapLocation> archonLocations) {
+        for (MapLocation archonLocation : archonLocations) {
+            if (leadLocation.isWithinDistanceSquared(archonLocation, LEAD_FARM_DISTANCE_SQUARED_THRESHOLD)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static boolean isResourceLocationDepleted(MapLocation loc, List<Message> messages) {
@@ -192,12 +256,12 @@ public class Miner {
         tryMove(rc, direction.get());
     }
 
-    public static boolean isAnyResourceInView(MapLocation[] nearbyLocationsWithGold, MapLocation[] nearbyLocationsWithLead) {
-        if (nearbyLocationsWithGold.length > 0) {
+    public static boolean isAnyResourceInView(RobotController rc, List<MapLocation> archonLocations) throws GameActionException {
+        if (getLeadLocationsInView(rc, archonLocations).size() > 0) {
             return true;
         }
 
-        if (nearbyLocationsWithLead.length > 0) {
+        if (getGoldLocationsInView(rc).size() > 0) {
             return true;
         }
 
@@ -249,20 +313,46 @@ public class Miner {
         return Optional.empty();
     }
 
-    public static List<Tuple<MapLocation, Integer>> getLeadLocationsInView(RobotController rc) throws GameActionException {
+    public static List<Tuple<MapLocation, Integer>> getLeadLocationsInView(RobotController rc, List<MapLocation> archonLocations) throws GameActionException {
+        return getLeadLocationsInViewWithLimit(rc, archonLocations, 10);
+    }
+
+    public static List<Tuple<MapLocation, Integer>> getLeadLocationsInViewWithLimit(RobotController rc, List<MapLocation> archonLocations, int limit) throws GameActionException {
+        int age = getAge(rc);
+        if (Miner.leadLocationsInViewValidAge == age) {
+            return Miner.leadLocationsInView;
+        }
+
         int initialBytecodesLeft = Clock.getBytecodesLeft();
         List<Tuple<MapLocation, Integer>> leadLocationsInView = new LinkedList<>();
-        for (MapLocation mapLocation: Miner.nearbyLocationsWithLead) {
+        for (MapLocation mapLocation : Miner.nearbyLocationsWithLead) {
             if (initialBytecodesLeft-Clock.getBytecodesLeft() > MINER_RESOURCE_IDENTIFICATION_BYTECODE_LIMIT) {
+                Miner.leadLocationsInView = leadLocationsInView;
+                Miner.leadLocationsInViewValidAge = age;
                 return leadLocationsInView;
             }
-            leadLocationsInView.add(Tuple.of(mapLocation, rc.senseLead(mapLocation)));
+
+            int leadAmount = rc.senseLead(mapLocation);
+
+            if (leadAmount < LEAD_FARM_AMOUNT_THRESHOLD && isFarmableLocation(mapLocation, archonLocations)) {
+                continue; // ignore farmable locations
+            }
+
+            leadLocationsInView.add(Tuple.of(mapLocation, leadAmount));
         }
+
+        Miner.leadLocationsInView = leadLocationsInView;
+        Miner.leadLocationsInViewValidAge = age;
 
         return leadLocationsInView;
     }
 
     public static List<Tuple<MapLocation, Integer>> getGoldLocationsInView(RobotController rc) throws GameActionException {
+        int age = getAge(rc);
+        if (Miner.goldLocationsInViewValidAge == age) {
+            return Miner.goldLocationsInView;
+        }
+
         int initialBytecodesLeft = Clock.getBytecodesLeft();
         List<Tuple<MapLocation, Integer>> goldLocationsInView = new LinkedList<>();
         for (MapLocation mapLocation: Miner.nearbyLocationsWithGold) {
@@ -272,6 +362,8 @@ public class Miner {
             goldLocationsInView.add(Tuple.of(mapLocation, rc.senseLead(mapLocation)));
         }
 
+        Miner.goldLocationsInView = goldLocationsInView;
+        Miner.goldLocationsInViewValidAge = age;
         return goldLocationsInView;
     }
 

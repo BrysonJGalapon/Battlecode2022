@@ -14,8 +14,7 @@ import java.util.Optional;
 import static kolohe.RobotPlayer.*;
 import static kolohe.communication.Entity.ALL_BUILDERS;
 import static kolohe.communication.Entity.ALL_ROBOTS;
-import static kolohe.communication.MessageType.ARCHON_STATE;
-import static kolohe.communication.MessageType.BUILD_WATCHTOWER_LOCATION;
+import static kolohe.communication.MessageType.*;
 import static kolohe.utils.Utils.*;
 
 /*
@@ -85,6 +84,12 @@ public class Archon {
         archonStateMessage.archonState = stateMachine.getCurrState();
         communicator.sendMessage(rc, archonStateMessage);
 
+        resourceAllocation.run(rc, stimulus);
+        double leadAllowance = resourceAllocation.getLeadAllowance(rc, ROBOT_TYPE);
+        leadBudget += leadAllowance;
+        double goldAllowance = resourceAllocation.getGoldAllowance(rc, ROBOT_TYPE);
+        goldBudget += goldAllowance;
+
         switch (stateMachine.getCurrState()) {
             case RESOURCE_COLLECTION:   runResourceCollectionActions(rc, stimulus); break;
             case DEFEND:                runDefendActions(rc, stimulus); break;
@@ -111,21 +116,90 @@ public class Archon {
         };
     }
 
+    private static MapLocation[] getLaboratoryFormation(MapLocation src) {
+        return new MapLocation[]{
+                src.translate(0, 4),
+                src.translate(0, -4),
+                src.translate(4, 0),
+                src.translate(-4, 0)
+        };
+    }
+
+    private static boolean broadcastBuildWatchtowerMessage(RobotController rc) throws GameActionException {
+        for (MapLocation watchtowerLocation : getWatchtowerFormation(rc.getLocation())) {
+            if (rc.onTheMap(watchtowerLocation)) {
+                // check if a watchTower is already there, and if not then tell builders to build there
+                RobotInfo robot = rc.senseRobotAtLocation(watchtowerLocation);
+                if (robot == null || robot.getTeam().equals(OPP_TEAM) || !robot.getType().isBuilding()) {
+                    rc.setIndicatorLine(rc.getLocation(), watchtowerLocation, 0, 255, 0);
+                    communicator.sendMessage(rc, Message.buildSimpleLocationMessage(
+                            BUILD_WATCHTOWER_LOCATION, watchtowerLocation, ALL_BUILDERS));
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean broadcastBuildLaboratoryMessage(RobotController rc) throws GameActionException {
+        for (MapLocation laboratoryLocation : getLaboratoryFormation(rc.getLocation())) {
+            if (rc.onTheMap(laboratoryLocation)) {
+                // check if a laboratory is already there, and if not then tell builders to build there
+                RobotInfo robot = rc.senseRobotAtLocation(laboratoryLocation);
+                if (robot == null || robot.getTeam().equals(OPP_TEAM) || !robot.getType().isBuilding()) {
+                    rc.setIndicatorLine(rc.getLocation(), laboratoryLocation, 0, 255, 0);
+                    communicator.sendMessage(rc, Message.buildSimpleLocationMessage(
+                            BUILD_LABORATORY_LOCATION, laboratoryLocation, ALL_BUILDERS));
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public static int getNumberOfSurroundingLaboratories(RobotController rc) throws GameActionException {
+        int count = 0;
+        for (MapLocation laboratoryLocation : getLaboratoryFormation(rc.getLocation())) {
+            if (rc.onTheMap(laboratoryLocation)) {
+                // check if a laboratory is already there, and if not then tell builders to build there
+                RobotInfo robot = rc.senseRobotAtLocation(laboratoryLocation);
+                if (robot != null && robot.getTeam().equals(MY_TEAM) && robot.getType().equals(RobotType.LABORATORY)) {
+                    count += 1;
+                }
+            }
+        }
+
+        return count;
+    }
+
+    public static int getNumberOfSurroundingWatchtowers(RobotController rc) throws GameActionException {
+        int count = 0;
+        for (MapLocation watchtowerLocation : getWatchtowerFormation(rc.getLocation())) {
+            if (rc.onTheMap(watchtowerLocation)) {
+                // check if a laboratory is already there, and if not then tell builders to build there
+                RobotInfo robot = rc.senseRobotAtLocation(watchtowerLocation);
+                if (robot != null && robot.getTeam().equals(MY_TEAM) && robot.getType().equals(RobotType.LABORATORY)) {
+                    count += 1;
+                }
+            }
+        }
+
+        return count;
+    }
+
     public static void runDefendActions(RobotController rc, Stimulus stimulus) throws GameActionException {
         if (buildDistribution == null) {
             throw new RuntimeException("Should not be here");
         }
 
         // broadcast need to build watchtowers
-        for (MapLocation watchtowerLocation : getWatchtowerFormation(rc.getLocation())) {
-            if (rc.onTheMap(watchtowerLocation)) {
-                // check if a watchTower is already there, and if not then tell builders to build there
-                RobotInfo robot = rc.senseRobotAtLocation(watchtowerLocation);
-                if (robot == null || robot.getTeam().equals(OPP_TEAM) || !robot.getType().equals(RobotType.WATCHTOWER)) {
-                    communicator.sendMessage(rc, Message.buildSimpleLocationMessage(
-                            BUILD_WATCHTOWER_LOCATION, watchtowerLocation, ALL_BUILDERS));
-                }
-            }
+        boolean done = broadcastBuildWatchtowerMessage(rc);
+
+        // if we are done building watchtowers, broadcast need to build laboratories
+        if (done) {
+            broadcastBuildLaboratoryMessage(rc);
         }
 
         tryBuildRobot(stimulus, rc);
@@ -175,18 +249,12 @@ public class Archon {
     }
 
     private static boolean isAffordable(RobotController rc, Stimulus stimulus, RobotType robotType) throws GameActionException {
-        resourceAllocation.run(rc, stimulus);
-
         switch (robotType) {
             case MINER:
             case BUILDER:
             case SOLDIER:
-                double leadAllowance = resourceAllocation.getLeadAllowance(rc, ROBOT_TYPE);
-                leadBudget += leadAllowance;
                 return robotType.buildCostLead <= leadBudget;
             case SAGE:
-                double goldAllowance = resourceAllocation.getGoldAllowance(rc, ROBOT_TYPE);
-                goldBudget += goldAllowance;
                 return robotType.buildCostGold <= goldBudget;
             default: throw new RuntimeException("Should not be here");
         }

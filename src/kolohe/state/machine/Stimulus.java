@@ -13,5 +13,6 @@ public class Stimulus {
     public MapLocation[] nearbyLocationsWithGold;
     public MapLocation[] nearbyLocationsWithLead;
     public List<Message> messages;
+    public List<MapLocation> archonLocations;
     public RobotInfo[] friendlyAdjacentNearbyRobotsInfo;
 }

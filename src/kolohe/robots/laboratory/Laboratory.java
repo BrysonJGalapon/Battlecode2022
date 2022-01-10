@@ -15,6 +15,7 @@ import java.util.Optional;
 import static kolohe.RobotPlayer.ROBOT_TYPE;
 import static kolohe.resource.allocation.ResourceAllocation.getClosestBroadcastedArchonLocation;
 import static kolohe.utils.Parameters.*;
+import static kolohe.utils.Utils.getAge;
 
 /*
     - can produce 1 Au per turn at cost of Pb, variable conversion rate
@@ -41,9 +42,18 @@ public class Laboratory {
     }
 
     public static void run(RobotController rc) throws GameActionException {
+        if (getAge(rc) == 0) {
+            return; // lots of bytecode is used to initialize the advanced communicator, so don't do anything on this turn
+        }
+
         Stimulus stimulus = collectStimulus(rc);
         stateMachine.transition(stimulus, rc);
         rc.setIndicatorString(String.format("state: %s", stateMachine.getCurrState()));
+
+        resourceAllocation.run(rc, stimulus);
+        double leadAllowance = resourceAllocation.getLeadAllowance(rc, ROBOT_TYPE);
+        leadBudget += leadAllowance;
+
         switch (stateMachine.getCurrState()) {
             case TRANSMUTE: runTransmuteActions(rc, stimulus); break;
             case MOVE:   runMoveActions(rc, stimulus); break;
@@ -52,9 +62,6 @@ public class Laboratory {
     }
 
     public static void runTransmuteActions(RobotController rc, Stimulus stimulus) throws GameActionException {
-        resourceAllocation.run(rc, stimulus);
-        double leadAllowance = resourceAllocation.getLeadAllowance(rc, ROBOT_TYPE);
-        leadBudget += leadAllowance;
         int transmutationRate = rc.getTransmutationRate();
         if (transmutationRate > leadBudget) {
             return;

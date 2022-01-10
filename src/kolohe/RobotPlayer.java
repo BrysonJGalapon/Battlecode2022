@@ -28,7 +28,7 @@ public strictfp class RobotPlayer {
     public static int totalLeadThisTurn = 0;
     public static int totalGoldThisTurn = 0;
 
-    public static final int TEST_ROBOT_ID = 288;
+    public static final int TEST_ROBOT_ID = 14092;
 
     /**
      * run() is the method that is called when a robot is instantiated in the Battlecode world.
@@ -88,10 +88,6 @@ public strictfp class RobotPlayer {
                 totalLeadLastTurn = totalLeadThisTurn;
                 totalGoldLastTurn = totalGoldThisTurn;
             } catch (GameActionException e) {
-//                if (ROBOT_ID == TEST_ROBOT_ID) {
-//                    System.out.println(rc.getType() + " Exception");
-//                    e.printStackTrace();
-//                }
                 // Oh no! It looks like we did something illegal in the Battlecode world. You should
                 // handle GameActionExceptions judiciously, in case unexpected events occur in the game
                 // world. Remember, uncaught exceptions cause your robot to explode!
