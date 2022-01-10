@@ -4,6 +4,7 @@ import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
+import kimo.robots.soldier.Soldier;
 import kimo.state.machine.StateMachine;
 import kimo.state.machine.Stimulus;
 
@@ -43,7 +44,7 @@ public class Watchtower {
         }
 
         // found an enemy, attack it!
-        MapLocation attackLocation = chooseEnemyToAttack(stimulus.enemyNearbyRobotsInfo).location;
+        MapLocation attackLocation = Soldier.chooseEnemyToAttack(stimulus.enemyNearbyRobotsInfo).location;
         if (rc.canAttack(attackLocation)) {
             rc.attack(attackLocation);
         }
@@ -51,10 +52,5 @@ public class Watchtower {
 
     public static void runMoveActions(RobotController rc, Stimulus stimulus) throws GameActionException {
         // TODO
-    }
-
-    private static RobotInfo chooseEnemyToAttack(RobotInfo[] enemyNearbyRobotsInfo) {
-        // TODO improve decision-making on which enemy to attack
-        return enemyNearbyRobotsInfo[0];
     }
 }

@@ -5,6 +5,7 @@ import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import kimo.pathing.pathfinder.Fuzzy;
+import kimo.utils.Utils;
 
 import java.util.Optional;
 
@@ -16,7 +17,7 @@ public class Circle {
     private MapLocation center;
     private int innerRadiusSquared;
     private int outerRadiusSquared;
-    private RotationPreference rotationPreference = RotationPreference.RIGHT;
+    private RotationPreference rotationPreference = Utils.getRandomValueFrom(RotationPreference.CONCRETE_ROTATION_PREFERENCES);
 
     private boolean isDiverging = false;
     private boolean isConverging = false;
@@ -60,6 +61,7 @@ public class Circle {
 
         if (isDiverging) {
             if (src.isWithinDistanceSquared(center, getAverageRadius())) {
+                fuzzy.enableLeftAndRight();
                 return fuzzy.getFuzzyDirection(src, src.directionTo(getMapCenter()), rc);
             } else {
                 isDiverging = false;
@@ -73,14 +75,12 @@ public class Circle {
 
         if (isConverging) {
             if (!src.isWithinDistanceSquared(center, getAverageRadius())) {
+                fuzzy.enableLeftAndRight();
                 return fuzzy.getFuzzyDirection(src, src.directionTo(center), rc);
             } else {
                 isConverging = false;
             }
         }
-
-        // always make forward progress
-        fuzzy.disableLeftAndRight();
 
         Optional<Direction> direction = Optional.empty();
 
@@ -89,10 +89,12 @@ public class Circle {
         }
 
         if (rotationPreference.equals(RotationPreference.LEFT)) {
+            fuzzy.disableLeftAndRight();
             direction = fuzzy.getFuzzyDirection(src, center.directionTo(src).rotateLeft().rotateLeft(), rc);
         }
 
         if (rotationPreference.equals(RotationPreference.RIGHT)) {
+            fuzzy.disableLeftAndRight();
             direction = fuzzy.getFuzzyDirection(src, center.directionTo(src).rotateRight().rotateRight(), rc);
         }
 

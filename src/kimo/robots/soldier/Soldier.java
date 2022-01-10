@@ -6,6 +6,7 @@ import kimo.communication.Entity;
 import kimo.communication.Message;
 import kimo.communication.MessageType;
 import kimo.communication.advanced.AdvancedCommunicator;
+import kimo.pathing.Circle;
 import kimo.pathing.Explore;
 import kimo.pathing.pathfinder.Fuzzy;
 import kimo.pathing.pathfinder.PathFinder;
@@ -24,11 +25,20 @@ import static kimo.utils.Utils.tryMove;
     - bytecode limit: 10,000
  */
 public class Soldier {
-    private static final StateMachine<SoldierState> stateMachine = StateMachine.startingAt(SoldierState.EXPLORE);
+    private static final StateMachine<SoldierState> stateMachine = StateMachine.startingAt(SoldierState.DEFEND);
     private static final PathFinder pathFinder = new Fuzzy();
     private static final Explore explorer = new Explore();
-//    public static final Communicator communicator = new BasicCommunicator();
     public static final Communicator communicator = new AdvancedCommunicator();
+    private static final Circle circler = new Circle();
+
+    private static final int innerRadius = 50;
+    private static int outerRadius = 100;
+
+    private static int numTurnsOnSameSquare = 0;
+    private static MapLocation previousSquare;
+
+    private static MapLocation primaryArchonLocation;
+    private static int BOREDEOM_THRESHOLD = 10;
 
     private static Stimulus collectStimulus(RobotController rc) throws GameActionException {
         Stimulus s = new Stimulus();
@@ -49,6 +59,13 @@ public class Soldier {
     }
 
     public static void run(RobotController rc) throws GameActionException {
+        if (rc.getLocation().equals(previousSquare)) {
+            numTurnsOnSameSquare += 1;
+        }
+
+        if (getAge(rc) == 0) {
+            setPrimaryArchonLocation(rc);
+        }
         Stimulus stimulus = collectStimulus(rc);
         stateMachine.transition(stimulus, rc);
         rc.setIndicatorString(String.format("state: %s", stateMachine.getCurrState()));
@@ -58,28 +75,25 @@ public class Soldier {
             case DEFEND:    runDefendActions(rc, stimulus); break;
             default: throw new RuntimeException("Should not be here");
         }
+
+        previousSquare = rc.getLocation();
     }
 
-    private static RobotInfo chooseEnemyToAttack(RobotInfo[] enemyNearbyRobotsInfo) {
+    private static void setPrimaryArchonLocation(RobotController rc) {
+        for (RobotInfo robotInfo : rc.senseNearbyRobots(2, MY_TEAM)) {
+            if (robotInfo.getType().equals(RobotType.ARCHON)) {
+                primaryArchonLocation = robotInfo.getLocation();
+            }
+        }
+    }
+
+    public static RobotInfo chooseEnemyToAttack(RobotInfo[] enemyNearbyRobotsInfo) {
         // attack enemy with lowest health
         // soldiers with lowest health
         //
 
-
-
-        // TODO improve decision-making on which enemy to attack
-        // priority: solider, 0.4
-        //           sage, 0.6
-        //           builder, 0.7
-        //           watchtower, 0.8
-        //           miner, 0.9
-        //           archon, 1
-
-
         double lowestHealth = 1200;
         int lowestHealthRobotIndex = 0;
-
-
 
         for (int i = 0; i < enemyNearbyRobotsInfo.length; i++) {
             switch (enemyNearbyRobotsInfo[i].getType()) {
@@ -134,26 +148,22 @@ public class Soldier {
             }
         }
 
-
-
         return enemyNearbyRobotsInfo[lowestHealthRobotIndex];
     }
 
-    // TODO dayne to improve
     public static void runAttackActions(RobotController rc, Stimulus stimulus) throws GameActionException {
-
-
         // attack an enemy
+        if (stimulus.enemyNearbyRobotsInfo.length > 0) {
+            MapLocation attackLocation = chooseEnemyToAttack(stimulus.enemyNearbyRobotsInfo).location;
+            if (rc.canAttack(attackLocation)) {
+                rc.attack(attackLocation);
+            }
 
-        MapLocation attackLocation = chooseEnemyToAttack(stimulus.enemyNearbyRobotsInfo).location;
-        if (rc.canAttack(attackLocation)) {
-            rc.attack(attackLocation);
-        }
-
-        // try to move toward the enemy
-        Optional<Direction> direction = pathFinder.findPath(rc.getLocation(), attackLocation, rc);
-        if (direction.isPresent() && rc.canMove(direction.get())) {
-            rc.move(direction.get());
+            // try to move toward the enemy
+            Optional<Direction> direction = pathFinder.findPath(rc.getLocation(), attackLocation, rc);
+            if (direction.isPresent() && rc.canMove(direction.get())) {
+                rc.move(direction.get());
+            }
         }
     }
 
@@ -185,31 +195,28 @@ public class Soldier {
     }
 
     public static void runDefendActions(RobotController rc, Stimulus stimulus) throws GameActionException {
-        // TODO
-    }
-
-    private static void sample(RobotController rc) throws GameActionException {
-        // Try to attack someone
-        int radius = rc.getType().actionRadiusSquared;
-        Team opponent = rc.getTeam().opponent();
-        RobotInfo[] enemies = rc.senseNearbyRobots(radius, opponent);
-        if (enemies.length > 0) {
-            MapLocation toAttack = enemies[0].location;
-            if (rc.canAttack(toAttack)) {
-                rc.attack(toAttack);
-            }
+        if (rc.senseNearbyRobots(2, MY_TEAM).length >= 5) {
+            outerRadius += 10;
+        } else if (rc.senseNearbyRobots(2, MY_TEAM).length <= 2) {
+            outerRadius = Math.max(outerRadius-50, 100);
         }
 
-        if (enemies.length == 0) {
-            Optional<Direction> direction = explorer.explore(rc.getLocation(), rc);
-            if (direction.isPresent() && rc.canMove(direction.get())) {
-                rc.move(direction.get());
-            }
-        } else {
-            // try to move toward enemy
-            Optional<Direction> direction = pathFinder.findPath(rc.getLocation(), enemies[0].location, rc);
-            if (direction.isPresent() && rc.canMove(direction.get())) {
-                rc.move(direction.get());
+        circler.setCenter(primaryArchonLocation);
+        circler.setInnerRadiusSquared(innerRadius);
+        circler.setOuterRadiusSquared(outerRadius);
+
+        Optional<Direction> direction = circler.circle(rc, rc.getLocation());
+
+
+        if (direction.isPresent()) {
+            tryMove(rc, direction.get());
+        }
+
+
+        if (stimulus.enemyNearbyRobotsInfo.length > 0) {
+            MapLocation attackLocation = chooseEnemyToAttack(stimulus.enemyNearbyRobotsInfo).location;
+            if (rc.canAttack(attackLocation)) {
+                rc.attack(attackLocation);
             }
         }
     }

@@ -26,8 +26,7 @@ import static kimo.utils.Utils.getAge;
 public class Laboratory {
     private static final StateMachine<LaboratoryState> stateMachine = StateMachine.startingAt(LaboratoryState.TRANSMUTE);
     public static final ResourceAllocation resourceAllocation = new ResourceAllocation();
-//    public static final Communicator communicator = new BasicCommunicator();
-    public static final Communicator communicator = new AdvancedCommunicator();
+    public static final AdvancedCommunicator communicator = new AdvancedCommunicator();
 
     public static double leadBudget = 0;
 
@@ -36,7 +35,7 @@ public class Laboratory {
 
     private static Stimulus collectStimulus(RobotController rc) throws GameActionException {
         Stimulus s = new Stimulus();
-        s.messages = communicator.receiveMessages(rc, LABORATORY_RECEIVE_MESSAGE_LIMIT, LABORATORY_RECEIVE_MESSAGE_BYTECODE_LIMIT);
+        s.archonStateMessages = communicator.receiveArchonStateMessages(rc);
         return s;
     }
 

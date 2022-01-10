@@ -28,7 +28,7 @@ public strictfp class RobotPlayer {
     public static int totalLeadThisTurn = 0;
     public static int totalGoldThisTurn = 0;
 
-    public static final int TEST_ROBOT_ID = 11161;
+    public static final int TEST_ROBOT_ID = 13249;
 
     /**
      * run() is the method that is called when a robot is instantiated in the Battlecode world.
@@ -78,11 +78,6 @@ public strictfp class RobotPlayer {
                     case WATCHTOWER: Watchtower.run(rc);    break;
                     case BUILDER:    Builder.run(rc);       break;
                     case SAGE:       Sage.run(rc);          break;
-                }
-
-                if (rc.getRoundNum() != currentRoundNumber) {
-                    System.out.println(String.format("%s exceeded its bytecode limit. Profile it and reduce bottlenecks.", rc.getType()));
-                    rc.resign();
                 }
 
                 totalLeadLastTurn = totalLeadThisTurn;

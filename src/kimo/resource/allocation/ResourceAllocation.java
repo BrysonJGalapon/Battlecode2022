@@ -105,7 +105,7 @@ public class ResourceAllocation {
         // check for broadcasted archon locations, and select the closest one
         MapLocation bestBroadcastedArchonLocation = null;
         int bestBroadcastedArchonLocationDistance = 0;
-        for (Message message : stimulus.messages) {
+        for (Message message : stimulus.archonStateMessages) {
             if (!message.messageType.equals(MessageType.ARCHON_STATE)) {
                 continue;
             }
