@@ -61,7 +61,27 @@ public class Soldier {
 
     private static RobotInfo chooseEnemyToAttack(RobotInfo[] enemyNearbyRobotsInfo) {
         // TODO improve decision-making on which enemy to attack
-        return enemyNearbyRobotsInfo[0];
+        // priority: archon,
+        //           solider,
+        //           builder,
+        //           miner
+
+        int robotToAttack = 0;
+
+        for (int i = 0; i < enemyNearbyRobotsInfo.length; i++) {
+            if (enemyNearbyRobotsInfo[i].getType() == RobotType.ARCHON) {
+                robotToAttack = i;
+                break;
+            }
+            else if (enemyNearbyRobotsInfo[i].getType() == RobotType.SOLDIER) {
+                robotToAttack = i;
+            }
+            else if (enemyNearbyRobotsInfo[i].getType() == RobotType.BUILDER) {
+                robotToAttack = i;
+            }
+        }
+
+        return enemyNearbyRobotsInfo[robotToAttack];
     }
 
     // TODO dayne to improve
