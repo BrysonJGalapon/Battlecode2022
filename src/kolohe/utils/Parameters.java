@@ -8,7 +8,7 @@ public class Parameters {
 
     public static final int MINER_RESOURCE_IDENTIFICATION_BYTECODE_LIMIT = 1500;
 
-    public static final int MINER_RECEIVE_MESSAGE_BYTECODE_LIMIT = 1500;
+    public static final int MINER_RECEIVE_MESSAGE_BYTECODE_LIMIT = 1200;
     public static final int BUILDER_RECEIVE_MESSAGE_BYTECODE_LIMIT = 3500;
     public static final int SOLDIER_RECEIVE_MESSAGE_BYTECODE_LIMIT = 3500;
     public static final int LABORATORY_RECEIVE_MESSAGE_BYTECODE_LIMIT = 3000;
@@ -67,4 +67,6 @@ public class Parameters {
 //    public static final int GOLD_LOCATION_MESSAGE_SHELF_LIFE = 20;
 //    public static final int LEAD_LOCATION_MESSAGE_SHELF_LIFE = 20;
 
+    public static final int LEAD_FARM_DISTANCE_SQUARED_THRESHOLD = 100;
+    public static final int LEAD_FARM_AMOUNT_THRESHOLD = 50;
 }

@@ -36,7 +36,7 @@ public enum MinerState implements State {
             case COLLECT:
                 // no more resources
 
-                if (!Miner.isAnyResourceInView(stimulus.nearbyLocationsWithGold, stimulus.nearbyLocationsWithLead)) {
+                if (!Miner.isAnyResourceInView(rc, stimulus.archonLocations)) {
                     // let other miners know that there are no more resources here
                     Miner.communicator.sendMessage(rc, Message.buildSimpleLocationMessage(MessageType.NO_RESOURCES_LOCATION, stimulus.myLocation, Entity.ALL_MINERS));
 
@@ -57,7 +57,7 @@ public enum MinerState implements State {
                 return COLLECT;
             case EXPLORE:
                 // found some resources, go collect them
-                if (Miner.isAnyResourceInView(stimulus.nearbyLocationsWithGold, stimulus.nearbyLocationsWithLead)) {
+                if (Miner.isAnyResourceInView(rc, stimulus.archonLocations)) {
                     return COLLECT;
                 }
 
@@ -75,7 +75,7 @@ public enum MinerState implements State {
             case TARGET:
                 // TODO once value is associated to a location, compare value of seen resources to target resource
                 // found some resources, go collect them
-                if (Miner.isAnyResourceInView(stimulus.nearbyLocationsWithGold, stimulus.nearbyLocationsWithLead)) {
+                if (Miner.isAnyResourceInView(rc, stimulus.archonLocations)) {
                     return COLLECT;
                 }
 

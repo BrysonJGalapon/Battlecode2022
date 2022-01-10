@@ -107,6 +107,10 @@ public class Builder {
             return; // lots of bytecode is used to initialize the advanced communicator, so don't do anything on this turn
         }
 
+        if (primaryArchonLocation != null) {
+            rc.setIndicatorLine(rc.getLocation(), primaryArchonLocation, 0, 0, 255);
+        }
+
         Stimulus stimulus = collectStimulus(rc);
         stateMachine.transition(stimulus, rc);
         rc.setIndicatorString(String.format("state: %s", stateMachine.getCurrState()));
