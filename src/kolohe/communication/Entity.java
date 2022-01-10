@@ -2,16 +2,10 @@ package kolohe.communication;
 
 import java.util.Optional;
 
-// TODO dayne
 public enum Entity {
-    ALL_ROBOTS(0), // index 0-6
-    ALL_MINERS(1), // 7-13
-    ALL_BUILDERS(2), // 21-27
-    ALL_ARCHONS(3), // 14-20
-    ALL_LABORATORIES(4), // 28-34
-    ALL_SAGES(5), // 35-41
-    ALL_SOLDIERS(6), // 42-48
-    ALL_WATCHTOWERS(7),
+    ALL_ROBOTS(0),
+    ALL_MINERS(1),
+    ALL_BUILDERS(2),
     // ...
     ;
 
@@ -25,7 +19,7 @@ public enum Entity {
         return encoding;
     }
 
-    public static Optional<Entity> decode(int encoding) {
+    public static Optional<Entity> decode(long encoding) {
         for (Entity entity : Entity.values()) {
             if (entity.encoding == encoding) {
                 return Optional.of(entity);

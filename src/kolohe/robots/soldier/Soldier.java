@@ -5,6 +5,7 @@ import kolohe.communication.Communicator;
 import kolohe.communication.Entity;
 import kolohe.communication.Message;
 import kolohe.communication.MessageType;
+import kolohe.communication.advanced.AdvancedCommunicator;
 import kolohe.communication.basic.BasicCommunicator;
 import kolohe.pathing.Explore;
 import kolohe.pathing.pathfinder.Fuzzy;
@@ -15,8 +16,8 @@ import kolohe.state.machine.Stimulus;
 import java.util.Optional;
 
 import static kolohe.RobotPlayer.*;
-import static kolohe.utils.Parameters.SOLDIER_RECEIVE_MESSAGE_BYTECODE_LIMIT;
-import static kolohe.utils.Parameters.SOLDIER_RECEIVE_MESSAGE_LIMIT;
+import static kolohe.utils.Parameters.*;
+import static kolohe.utils.Utils.getAge;
 import static kolohe.utils.Utils.tryMove;
 
 /*
@@ -27,7 +28,8 @@ public class Soldier {
     private static final StateMachine<SoldierState> stateMachine = StateMachine.startingAt(SoldierState.EXPLORE);
     private static final PathFinder pathFinder = new Fuzzy();
     private static final Explore explorer = new Explore();
-    public static final Communicator communicator = new BasicCommunicator();
+//    public static final Communicator communicator = new BasicCommunicator();
+    public static final Communicator communicator = new AdvancedCommunicator();
 
     private static Stimulus collectStimulus(RobotController rc) throws GameActionException {
         Stimulus s = new Stimulus();
@@ -116,7 +118,8 @@ public class Soldier {
         // since soldiers do not use much bytecode in this state, use extra bytecode to report lead locations
         MapLocation[] nearbyLocationsWithLead = rc.senseNearbyLocationsWithLead(ROBOT_TYPE.visionRadiusSquared);
         if (nearbyLocationsWithLead.length > 0) {
-            communicator.sendMessage(rc, Message.buildSimpleLocationMessage(MessageType.LEAD_LOCATION, nearbyLocationsWithLead[0], Entity.ALL_MINERS));
+            communicator.sendMessage(rc, Message.buildSimpleLocationMessage(
+                    MessageType.LEAD_LOCATION, nearbyLocationsWithLead[0], Entity.ALL_MINERS));
         }
 
         Optional<Direction> direction = explorer.explore(rc.getLocation(), rc);
@@ -127,10 +130,6 @@ public class Soldier {
 
     public static void runDefendActions(RobotController rc, Stimulus stimulus) throws GameActionException {
         // TODO
-    }
-
-    private static int getAge(RobotController rc) {
-        return rc.getRoundNum()-BIRTH_YEAR;
     }
 
     private static void sample(RobotController rc) throws GameActionException {

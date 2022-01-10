@@ -51,17 +51,23 @@ public class Parameters {
     //      - ARCHON_DEFEND_TO_ATTACK_ROBOT_COUNT_THRESHOLD > ARCHON_DEFEND_TO_ATTACK_ROBOT_COUNT_THRESHOLD
     //      - ARCHON_SURVIVE_TO_DEFEND_ROBOT_COUNT_THRESHOLD  == ARCHON_RESOURCE_COLLECTION_TO_DEFEND_ROBOT_COUNT_THRESHOLD
     //      - ARCHON_ANY_TO_SURVIVE_ROBOT_COUNT_THRESHOLD is the smallest
-    public static int ARCHON_RESOURCE_COLLECTION_TO_DEFEND_ROBOT_COUNT_THRESHOLD = 15;
-    public static int ARCHON_DEFEND_TO_RESOURCE_COLLECTION_ROBOT_COUNT_THRESHOLD = 7;
-    public static int ARCHON_DEFEND_TO_ATTACK_ROBOT_COUNT_THRESHOLD = 25;
-    public static int ARCHON_ATTACK_TO_DEFEND_ROBOT_COUNT_THRESHOLD = 10;
-    public static int ARCHON_ANY_TO_SURVIVE_ROBOT_COUNT_THRESHOLD = 6;
-    public static int ARCHON_SURVIVE_TO_DEFEND_ROBOT_COUNT_THRESHOLD = 15;
+    public static final int ARCHON_RESOURCE_COLLECTION_TO_DEFEND_ROBOT_COUNT_THRESHOLD = 15;
+    public static final int ARCHON_DEFEND_TO_RESOURCE_COLLECTION_ROBOT_COUNT_THRESHOLD = 7;
+    public static final int ARCHON_DEFEND_TO_ATTACK_ROBOT_COUNT_THRESHOLD = 25;
+    public static final int ARCHON_ATTACK_TO_DEFEND_ROBOT_COUNT_THRESHOLD = 10;
+    public static final int ARCHON_ANY_TO_SURVIVE_ROBOT_COUNT_THRESHOLD = 6;
+    public static final int ARCHON_SURVIVE_TO_DEFEND_ROBOT_COUNT_THRESHOLD = 15;
 
     // number of rounds that must pass before survival state is reached
-    public static int ARCHON_SURVIVE_GRACE_PERIOD = 200;
+    public static final int ARCHON_SURVIVE_GRACE_PERIOD = 200;
 
     // number of turns before a laboratory decides to force-update its primary archon location
-    public static int LABORATORY_PRIMARY_ARCHON_LOCATION_SHELF_LIFE = 50;
+    public static final int LABORATORY_PRIMARY_ARCHON_LOCATION_SHELF_LIFE = 50;
+
+//    // expirations
+//    public static final int NEVER = 2000;
+//    public static final int BUILD_WATCHTOWER_LOCATION_MESSAGE_SHELF_LIFE = 20;
+//    public static final int GOLD_LOCATION_MESSAGE_SHELF_LIFE = 20;
+//    public static final int LEAD_LOCATION_MESSAGE_SHELF_LIFE = 20;
 
 }

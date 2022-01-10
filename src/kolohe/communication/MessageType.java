@@ -2,13 +2,13 @@ package kolohe.communication;
 
 import java.util.Optional;
 
-// TODO dayne
 public enum MessageType {
     LEAD_LOCATION(1),
-    NO_RESOURCES_LOCATION(2),
-    BUILD_WATCHTOWER_LOCATION(3),
-    GOLD_LOCATION(4),
-    ARCHON_STATE(5),
+    GOLD_LOCATION(2),
+    NO_RESOURCES_LOCATION(3),
+    BUILD_WATCHTOWER_LOCATION(4),
+    BUILD_LABORATORY_LOCATION(5),
+    ARCHON_STATE(6),
 //    GOLD_LOCATION(1), // miner
 //    LEAD_LOCATION(2),
 //    NO_RESOURCES_LOCATION(3),
@@ -37,7 +37,7 @@ public enum MessageType {
         return encoding;
     }
 
-    public static Optional<MessageType> decode(int encoding) {
+    public static Optional<MessageType> decode(long encoding) {
         for (MessageType messageType : MessageType.values()) {
             if (messageType.encoding == encoding) {
                 return Optional.of(messageType);

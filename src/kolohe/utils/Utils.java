@@ -9,6 +9,7 @@ import kolohe.pathing.RotationPreference;
 import java.util.Optional;
 import java.util.Random;
 
+import static kolohe.RobotPlayer.BIRTH_YEAR;
 import static kolohe.RobotPlayer.ROBOT_ID;
 import static kolohe.pathing.RotationPreference.getRandomConcreteRotationPreference;
 
@@ -27,6 +28,10 @@ public class Utils {
             Direction.WEST,
             Direction.NORTHWEST,
     };
+
+    public static int getAge(RobotController rc) {
+        return rc.getRoundNum()-BIRTH_YEAR;
+    }
 
     public static Random getRng() {
         if (RNG == null) {

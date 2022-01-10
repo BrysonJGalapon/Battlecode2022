@@ -3,6 +3,7 @@ package kolohe.robots.archon;
 import battlecode.common.*;
 import kolohe.communication.Communicator;
 import kolohe.communication.Message;
+import kolohe.communication.advanced.AdvancedCommunicator;
 import kolohe.communication.basic.BasicCommunicator;
 import kolohe.resource.allocation.ResourceAllocation;
 import kolohe.state.machine.StateMachine;
@@ -56,7 +57,8 @@ import static kolohe.utils.Utils.*;
  */
 public class Archon {
     public static final StateMachine<ArchonState> stateMachine = StateMachine.startingAt(ArchonState.RESOURCE_COLLECTION);
-    public static final Communicator communicator = new BasicCommunicator();
+//    public static final Communicator communicator = new BasicCommunicator();
+    public static final Communicator communicator = new AdvancedCommunicator();
     public static final ResourceAllocation resourceAllocation = new ResourceAllocation();
 
     public static int[] buildDistribution = null;
@@ -120,7 +122,8 @@ public class Archon {
                 // check if a watchTower is already there, and if not then tell builders to build there
                 RobotInfo robot = rc.senseRobotAtLocation(watchtowerLocation);
                 if (robot == null || robot.getTeam().equals(OPP_TEAM) || !robot.getType().equals(RobotType.WATCHTOWER)) {
-                    communicator.sendMessage(rc, Message.buildSimpleLocationMessage(BUILD_WATCHTOWER_LOCATION, watchtowerLocation, ALL_BUILDERS));
+                    communicator.sendMessage(rc, Message.buildSimpleLocationMessage(
+                            BUILD_WATCHTOWER_LOCATION, watchtowerLocation, ALL_BUILDERS));
                 }
             }
         }

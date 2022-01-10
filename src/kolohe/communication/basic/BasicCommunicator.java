@@ -161,12 +161,12 @@ public class BasicCommunicator implements Communicator {
         switch (entity) {
             case ALL_ROBOTS: return true;
             case ALL_MINERS: return robotType.equals(RobotType.MINER);
-            case ALL_ARCHONS: return robotType.equals(RobotType.ARCHON);
+//            case ALL_ARCHONS: return robotType.equals(RobotType.ARCHON);
             case ALL_BUILDERS: return robotType.equals(RobotType.BUILDER);
-            case ALL_LABORATORIES: return robotType.equals(RobotType.LABORATORY);
-            case ALL_SAGES: return robotType.equals(RobotType.SAGE);
-            case ALL_SOLDIERS: return robotType.equals(RobotType.SOLDIER);
-            case ALL_WATCHTOWERS: return robotType.equals(RobotType.WATCHTOWER); // TODO not enough bits :(
+//            case ALL_LABORATORIES: return robotType.equals(RobotType.LABORATORY);
+//            case ALL_SAGES: return robotType.equals(RobotType.SAGE);
+//            case ALL_SOLDIERS: return robotType.equals(RobotType.SOLDIER);
+//            case ALL_WATCHTOWERS: return robotType.equals(RobotType.WATCHTOWER); // TODO not enough bits :(
             default: throw new RuntimeException("Should not be here");
         }
     }
