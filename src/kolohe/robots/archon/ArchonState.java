@@ -85,7 +85,9 @@ public enum ArchonState implements State {
                     return RESOURCE_COLLECTION;
                 }
 
-                if (averageRobotCountPerArchon > ARCHON_DEFEND_TO_ATTACK_ROBOT_COUNT_THRESHOLD && Archon.getNumberOfSurroundingLaboratories(rc) >= 2) {
+                if (averageRobotCountPerArchon > ARCHON_DEFEND_TO_ATTACK_ROBOT_COUNT_THRESHOLD
+                        && Archon.getNumberOfSurroundingLaboratories(rc) >= 2
+                        && Archon.getNumberOfSurroundingWatchtowers(rc) >= 4) {
                     Archon.buildDistribution = ARCHON_ATTACK_BUILD_DISTRIBUTION;
                     return ATTACK;
                 }
@@ -98,7 +100,7 @@ public enum ArchonState implements State {
                     return SURVIVE;
                 }
 
-                if (averageRobotCountPerArchon < ARCHON_ATTACK_TO_DEFEND_ROBOT_COUNT_THRESHOLD) {
+                if (averageRobotCountPerArchon < ARCHON_ATTACK_TO_DEFEND_ROBOT_COUNT_THRESHOLD || Archon.getNumberOfSurroundingWatchtowers(rc) < 4 || Archon.getNumberOfSurroundingLaboratories(rc) == 0) {
                     Archon.buildDistribution = ARCHON_DEFEND_BUILD_DISTRIBUTION;
                     return DEFEND;
                 }

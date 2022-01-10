@@ -39,7 +39,7 @@ public class Parameters {
     public static final int[] RESOURCE_ALLOCATION_SURVIVE_GOLD_DISTIBUTION = new int[]{100, 0, 0};
 
     // Makes resource-utilization entities more aggressive in using resources
-    public static final double RESOURCE_ALLOCATION_RESOURCE_OVERLAP_FACTOR = 1.5;
+    public static final double RESOURCE_ALLOCATION_RESOURCE_OVERLAP_FACTOR = 1.8;
 
 
     // Thresholds that govern Archon state transitions

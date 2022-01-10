@@ -49,6 +49,11 @@ public class Laboratory {
         Stimulus stimulus = collectStimulus(rc);
         stateMachine.transition(stimulus, rc);
         rc.setIndicatorString(String.format("state: %s", stateMachine.getCurrState()));
+
+        resourceAllocation.run(rc, stimulus);
+        double leadAllowance = resourceAllocation.getLeadAllowance(rc, ROBOT_TYPE);
+        leadBudget += leadAllowance;
+
         switch (stateMachine.getCurrState()) {
             case TRANSMUTE: runTransmuteActions(rc, stimulus); break;
             case MOVE:   runMoveActions(rc, stimulus); break;
@@ -57,9 +62,6 @@ public class Laboratory {
     }
 
     public static void runTransmuteActions(RobotController rc, Stimulus stimulus) throws GameActionException {
-        resourceAllocation.run(rc, stimulus);
-        double leadAllowance = resourceAllocation.getLeadAllowance(rc, ROBOT_TYPE);
-        leadBudget += leadAllowance;
         int transmutationRate = rc.getTransmutationRate();
         if (transmutationRate > leadBudget) {
             return;
