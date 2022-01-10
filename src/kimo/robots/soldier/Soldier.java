@@ -62,35 +62,90 @@ public class Soldier {
     }
 
     private static RobotInfo chooseEnemyToAttack(RobotInfo[] enemyNearbyRobotsInfo) {
-        // TODO improve decision-making on which enemy to attack
-        // priority: archon,
-        //           solider,
-        //           builder,
-        //           miner
+        // attack enemy with lowest health
+        // soldiers with lowest health
+        //
 
-        int robotToAttack = 0;
+
+
+        // TODO improve decision-making on which enemy to attack
+        // priority: solider, 0.4
+        //           sage, 0.6
+        //           builder, 0.7
+        //           watchtower, 0.8
+        //           miner, 0.9
+        //           archon, 1
+
+
+        double lowestHealth = 1200;
+        int lowestHealthRobotIndex = 0;
+
+
 
         for (int i = 0; i < enemyNearbyRobotsInfo.length; i++) {
-            if (enemyNearbyRobotsInfo[i].getType() == RobotType.ARCHON) {
-                robotToAttack = i;
-                break;
-            }
-            else if (enemyNearbyRobotsInfo[i].getType() == RobotType.SOLDIER) {
-                robotToAttack = i;
-            }
-            else if (enemyNearbyRobotsInfo[i].getType() == RobotType.BUILDER) {
-                robotToAttack = i;
+            switch (enemyNearbyRobotsInfo[i].getType()) {
+                case SOLDIER: {
+                    double health = (enemyNearbyRobotsInfo[i].getHealth() * 20) * 0.4;
+                    if (health < lowestHealth) {
+                        lowestHealth = health;
+                        lowestHealthRobotIndex = i;
+                    }
+                    break;
+                }
+                case SAGE: {
+                    double health = (enemyNearbyRobotsInfo[i].getHealth() * 10) * 0.6;
+                    if (health < lowestHealth) {
+                        lowestHealth = health;
+                        lowestHealthRobotIndex = i;
+                    }
+                    break;
+                }
+                case BUILDER: {
+                    double health = (enemyNearbyRobotsInfo[i].getHealth() * 33) * 0.7;
+                    if (health < lowestHealth) {
+                        lowestHealth = health;
+                        lowestHealthRobotIndex = i;
+                    }
+                    break;
+                }
+                case WATCHTOWER: {
+                    double health = (enemyNearbyRobotsInfo[i].getHealth() * 8) * 0.8;
+                    if (health < lowestHealth) {
+                        lowestHealth = health;
+                        lowestHealthRobotIndex = i;
+                    }
+                    break;
+                }
+                case ARCHON: {
+                    double health = enemyNearbyRobotsInfo[i].getHealth() * 0.9;
+                    if (health < lowestHealth) {
+                        lowestHealth = health;
+                        lowestHealthRobotIndex = i;
+                    }
+                    break;
+                }
+                case MINER: {
+                    double health = (enemyNearbyRobotsInfo[i].getHealth() * 25);
+                    if (health < lowestHealth) {
+                        lowestHealth = health;
+                        lowestHealthRobotIndex = i;
+                    }
+                    break;
+                }
             }
         }
 
 
 
-        return enemyNearbyRobotsInfo[robotToAttack];
+        return enemyNearbyRobotsInfo[lowestHealthRobotIndex];
     }
 
     // TODO dayne to improve
     public static void runAttackActions(RobotController rc, Stimulus stimulus) throws GameActionException {
+
+
         // attack an enemy
+
         MapLocation attackLocation = chooseEnemyToAttack(stimulus.enemyNearbyRobotsInfo).location;
         if (rc.canAttack(attackLocation)) {
             rc.attack(attackLocation);

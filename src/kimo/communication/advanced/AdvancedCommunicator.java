@@ -147,6 +147,7 @@ public class AdvancedCommunicator implements Communicator {
             case BUILD_WATCHTOWER_LOCATION:
             case BUILD_LABORATORY_LOCATION:
             case SOLDIER_TARGET_LOCATION:
+            case ENEMY_ARCHON_LOCATION:
                 encoding = append(encoding, encodeMapLocation(message.location), MAP_LOCATION_BIT_LENGTH);
                 break;
             default: throw new RuntimeException("Should not be here");
@@ -188,6 +189,7 @@ public class AdvancedCommunicator implements Communicator {
             case BUILD_WATCHTOWER_LOCATION:
             case BUILD_LABORATORY_LOCATION:
             case SOLDIER_TARGET_LOCATION:
+            case ENEMY_ARCHON_LOCATION:
                 int mapLocationEncoding = encoding & getTailBitMask(MAP_LOCATION_BIT_LENGTH);
                 Optional<MapLocation> mapLocation = decodeMapLocation(mapLocationEncoding);
                 if (!mapLocation.isPresent()) {
